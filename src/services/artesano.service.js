@@ -1,16 +1,30 @@
-// Simulación de base datos en memoria
+import prisma from "../prisma.js";
 
-let artesanos = [
-    {id: 1, nombre: 'Juan', apellido: 'Pérez', rubro: "Textil", localidad: 'Capital'}
-];
+export const getArtesanos = async () => {
+    return await prisma.artesano.findMany();
+};
 
-export const getArtesanos = () => {
-    return artesanos;
-}
+export const getArtesanoById = async (id) => {
+    return await prisma.artesano.findUnique({
+        where: { id: Number(id) }
+    });
+};
 
-export const crearArtesano = (nuevoArtesano) => {
-  const id = artesanos.length > 0 ? artesanos[artesanos.length - 1].id + 1 : 1;
-  const artesano = { id, ...nuevoArtesano };
-  artesanos.push(artesano);
-  return artesano;
+export const crearArtesano = async (datos) => {
+    return await prisma.artesano.create({
+        data: datos
+    });
+};
+
+export const actualizarArtesano = async (id, datos) => {
+    return await prisma.artesano.update({
+        where: { id: Number(id) },
+        data: datos
+    });
+};
+
+export const eliminarArtesano = async (id) => {
+    return await prisma.artesano.delete({
+        where: { id: Number(id) }
+    });
 };
