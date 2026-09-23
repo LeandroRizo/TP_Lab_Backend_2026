@@ -1,7 +1,11 @@
 import prisma from "../prisma.js";
 
 export const getArtesanos = async () => {
-    return await prisma.artesano.findMany();
+    return await prisma.artesano.findMany({
+        include: {
+            productos: true
+        }
+    });
 };
 
 export const getArtesanoById = async (id) => {
