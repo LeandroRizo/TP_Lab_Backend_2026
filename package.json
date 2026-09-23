@@ -5,8 +5,9 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
-    "start": "node app.js",
-    "dev": "node --watch app.js"
+    "start": "node --env-file=.env src/app.js",
+    "dev": "node --watch src/app.js",
+    "postinstall": "prisma skills sync || exit 0"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,10 @@
   },
   "homepage": "https://github.com/LeandroRizo/TP_Lab_Backend_2026#readme",
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
   }
 }
