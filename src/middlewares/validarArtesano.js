@@ -1,20 +1,17 @@
-export const validarArtesano = (req, res, next) => {
-    const { nombre, apellido, rubro, localidad } = req.body;
+import { artesanoSchema } from "../schemas/artesano.schema.js";
+import { crearArtesanoDTO } from "../dtos/artesano.dto.js";
 
-    if (
-        typeof nombre !== "string" ||
-        nombre.trim() === "" ||
-        typeof apellido !== "string" ||
-        apellido.trim() === "" ||
-        typeof rubro !== "string" ||
-        rubro.trim() === "" ||
-        typeof localidad !== "string" ||
-        localidad.trim() === ""
-    ) {
+export const validarArtesano = (req, res, next) => {
+    const resultado = artesanoSchema.safeParse(req.body);
+
+    if (!resultado.success) {
         return res.status(400).json({
-            mensaje: "Todos los campos del artesano son obligatorios y deben ser textos no vacíos"
+            mensaje: "Los datos del artesano no son válidos",
+            errores: resultado.error.issues
         });
     }
+
+    req.body = crearArtesanoDTO(resultado.data);
 
     next();
 };

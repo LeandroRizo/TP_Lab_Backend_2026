@@ -1,3 +1,4 @@
+import { artesanoQueryDTO } from "../dtos/artesanoQuery.dto.js";
 import {
     getArtesanos,
     crearArtesano,
@@ -6,8 +7,11 @@ import {
     eliminarArtesano
 } from "../services/artesano.service.js";
 
+
 export const obtenerArtesanos = async (req, res) => {
-    const artesanos = await getArtesanos();
+    const filtros = artesanoQueryDTO(req.queryValidada);
+
+    const artesanos = await getArtesanos(filtros);
 
     res.status(200).json(artesanos);
 };

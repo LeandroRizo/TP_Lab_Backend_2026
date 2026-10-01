@@ -9,10 +9,11 @@ import {
 } from "../controllers/artesano.controller.js";
 
 import { validarArtesano } from "../middlewares/validarArtesano.js";
+import { validarArtesanoQuery } from "../middlewares/validarArtesanoQuery.js";
 
 const router = express.Router();
 
-router.get("/", obtenerArtesanos);
+router.get("/", validarArtesanoQuery, obtenerArtesanos);
 router.post("/", validarArtesano, crear);
 router.get("/:id", obtenerPorId);
 router.put("/:id", validarArtesano, actualizar);
