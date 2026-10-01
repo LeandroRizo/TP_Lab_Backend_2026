@@ -7,21 +7,153 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Rol {
+  id_rol      Int       @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  usuarios    Usuario[]
+
+}
+
+model Usuario {
+  id_usuario  String    @id @default(uuid()) @db.Uuid
+  email       String    @unique
+  passwordHash    String
+  id_rol      Int
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  rol         Rol       @relation(fields: [id_rol], references: [id_rol])
+  artesano    Artesano?
+
+}
+
 model Artesano {
-  id         Int        @id @default(autoincrement())
-  nombre     String
-  apellido   String
-  rubro      String
-  localidad  String
-  productos  Producto[]
+  id_artesano  Int       @id @default(autoincrement())
+  id_usuario   String    @unique @db.Uuid
+  nombre       String
+  apellido     String
+  dni          String    @unique
+  telefono     String?
+  direccion    String?
+  descripcion  String?   @db.Text
+  instagram    String?
+  id_localidad Int
+  id_rubro     Int
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  usuario       Usuario       @relation(fields: [id_usuario], references: [id_usuario])
+  localidad     Localidad     @relation(fields: [id_localidad], references: [id_localidad])
+  rubro         Rubro         @relation(fields: [id_rubro], references: [id_rubro])
+  inscripciones Inscripcion[]
+  productos     Producto[]
+
+}
+
+model Localidad {
+  id_localidad Int       @id @default(autoincrement())
+  nombre       String
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  artesanos    Artesano[]
+
+}
+
+model Rubro {
+  id_rubro    Int       @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  artesanos   Artesano[]
+
+}
+
+model Inscripcion {
+  id_inscripcion   Int       @id @default(autoincrement())
+  id_artesano      Int
+  id_stand         Int?      // Nullable ya que la inscripción puede estar PENDIENTE o RECHAZADA
+  anio             Int
+  fecha_solicitud  DateTime
+  fecha_resolucion DateTime?
+  estado           String
+  motivo_rechazo   String?   @db.Text
+  observaciones    String?   @db.Text
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  artesano         Artesano  @relation(fields: [id_artesano], references: [id_artesano])
+  stand            Stand?    @relation(fields: [id_stand], references: [id_stand])
+
+}
+
+model Pabellon {
+  id_pabellon Int       @id @default(autoincrement())
+  numero      Int
+  nombre      String
+  descripcion String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  zonas       Zona[]
+
+}
+
+model Zona {
+  id_zona     Int       @id @default(autoincrement())
+  id_pabellon Int
+  numero      Int
+  nombre      String
+  descripcion String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  pabellon    Pabellon  @relation(fields: [id_pabellon], references: [id_pabellon])
+  stands      Stand[]
+
+}
+
+model Stand {
+  id_stand    Int       @id @default(autoincrement())
+  id_zona     Int
+  numero      Int
+  descripcion String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  zona          Zona          @relation(fields: [id_zona], references: [id_zona])
+  inscripciones Inscripcion[]
+
+}
+
+model Categoria {
+  id_categoria Int       @id @default(autoincrement())
+  nombre       String
+  descripcion  String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  productos    Producto[]
+
 }
 
 model Producto {
-  id          Int       @id @default(autoincrement())
-  nombre      String
-  descripcion String?
-  precio      Decimal
-  artesanoId  Int
+  id_producto  Int       @id @default(autoincrement())
+  id_artesano  Int
+  id_categoria Int
+  nombre       String
+  descripcion  String?   @db.Text
+  precio       Decimal
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
 
-  artesano    Artesano  @relation(fields: [artesanoId], references: [id], onDelete: Cascade)
+  artesano     Artesano  @relation(fields: [id_artesano], references: [id_artesano])
+  categoria    Categoria @relation(fields: [id_categoria], references: [id_categoria])
+
 }
