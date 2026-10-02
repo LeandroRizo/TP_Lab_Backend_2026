@@ -7,41 +7,51 @@ import {
     eliminarArtesano
 } from "../services/artesano.service.js";
 
-
 export const obtenerArtesanos = async (req, res) => {
-    const filtros = artesanoQueryDTO(req.queryValidada);
-
-    const artesanos = await getArtesanos(filtros);
-
-    res.status(200).json(artesanos);
+    try {
+        const filtros = artesanoQueryDTO(req.queryValidada);
+        const data = await getArtesanos(filtros);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
 export const crear = async (req, res) => {
-    const nuevoArtesano = await crearArtesano(req.body);
-
-    res.status(201).json(nuevoArtesano);
+    try {
+        const nuevo = await crearArtesano(req.body);
+        res.status(201).json(nuevo);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
 export const obtenerPorId = async (req, res) => {
-    const artesano = await getArtesanoById(req.params.id);
-
-    if (!artesano) {
-        return res.status(404).json({
-            mensaje: "Artesano no encontrado"
-        });
+    try {
+        const item = await getArtesanoById(req.params.id);
+        if (!item) return res.status(404).json({ mensaje: "Artesano no encontrado" });
+        res.status(200).json(item);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-
-    res.status(200).json(artesano);
 };
 
 export const actualizar = async (req, res) => {
-    const artesano = await actualizarArtesano(req.params.id, req.body);
-
-    res.status(200).json(artesano);
+    try {
+        const item = await actualizarArtesano(req.params.id, req.body);
+        res.status(200).json(item);
+    } catch (error) {
+        if (error.code === 'P2025') return res.status(404).json({ mensaje: "Artesano no encontrado" });
+        res.status(500).json({ error: error.message });
+    }
 };
 
 export const eliminar = async (req, res) => {
-    await eliminarArtesano(req.params.id);
-
-    res.status(204).send();
+    try {
+        await eliminarArtesano(req.params.id);
+        res.status(204).send();
+    } catch (error) {
+        if (error.code === 'P2025') return res.status(404).json({ mensaje: "Artesano no encontrado" });
+        res.status(500).json({ error: error.message });
+    }
 };

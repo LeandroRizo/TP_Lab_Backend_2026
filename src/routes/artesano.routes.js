@@ -1,5 +1,4 @@
 import express from "express";
-
 import {
     obtenerArtesanos,
     crear,
@@ -7,7 +6,6 @@ import {
     actualizar,
     eliminar
 } from "../controllers/artesano.controller.js";
-
 import { validarArtesano } from "../middlewares/validarArtesano.js";
 import { validarArtesanoQuery } from "../middlewares/validarArtesanoQuery.js";
 

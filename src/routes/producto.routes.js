@@ -1,19 +1,20 @@
 import express from "express";
-
 import {
     obtenerProductos,
-    obtenerProductoPorId,
-    crearNuevoProducto,
-    actualizarProducto,
-    eliminarProducto
+    crear,
+    obtenerPorId,
+    actualizar,
+    eliminar
 } from "../controllers/producto.controller.js";
+import { validarProducto } from "../middlewares/validarProducto.js";
+import { validarProductoQuery } from "../middlewares/validarProductoQuery.js";
 
 const router = express.Router();
 
-router.get("/", obtenerProductos);
-router.get("/:id", obtenerProductoPorId);
-router.post("/", crearNuevoProducto);
-router.put("/:id", actualizarProducto);
-router.delete("/:id", eliminarProducto);
+router.get("/", validarProductoQuery, obtenerProductos);
+router.post("/", validarProducto, crear);
+router.get("/:id", obtenerPorId);
+router.put("/:id", validarProducto, actualizar);
+router.delete("/:id", eliminar);
 
 export default router;
