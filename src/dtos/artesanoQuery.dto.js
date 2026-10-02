@@ -1,7 +1,8 @@
 export const artesanoQueryDTO = (datos) => {
     return {
-        localidad: datos.localidad,
-        rubro: datos.rubro,
+        nombre: datos.nombre,
+        apellido: datos.apellido,
+        dni: datos.dni,
         sortBy: datos.sortBy,
         order: datos.order,
         page: datos.page,
