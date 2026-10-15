@@ -1,0 +1,150 @@
+================================================================================
+REPORTE DE CAMBIOS Y NUEVAS CARACTERÍSTICAS - API PONCHO DIGITAL (TP_LAB_BACKEND)
+================================================================================
+
+Este documento detalla todas las modificaciones, nuevas implementaciones y criterios
+de evaluación cumplidos para la entrega del trabajo práctico backend.
+
+--------------------------------------------------------------------------------
+1. MODELO DE DATOS Y MIGRACIONES (PRISMA)
+--------------------------------------------------------------------------------
+- [Criterio 1.1] Modelo Usuario:
+  * Se agregó el campo obligatorio 'nombre' al modelo Usuario en prisma/schema.prisma.
+  * Se verificó que contenga 'id_usuario', 'nombre', 'email' (@unique) y 'passwordHash'.
+  * No existe ningún campo con la contraseña en texto plano.
+  * Se crearon y aplicaron las migraciones correspondientes en PostgreSQL.
+
+- [Criterio 1.3] Hashes en la Base de Datos:
+  * Todos los registros de la tabla Usuario fueron actualizados con hashes reales de
+    bcrypt ($2b$...) generados con un costo de salting >= 10. En la base de datos no
+    existen contraseñas en texto claro ni hashes simulados.
+
+- [Criterio 2.6] Modelo TokenRevocado:
+  * Se añadió el modelo TokenRevocado con campos:
+    - 'jti' (String, @id)
+    - 'venceEn' (DateTime)
+    - 'createdAt' (DateTime, @default(now()))
+  * Migración aplicada correctamente en la base de datos.
+
+--------------------------------------------------------------------------------
+2. CONFIGURACIÓN Y SEGURIDAD DEL ENTORNO
+--------------------------------------------------------------------------------
+- [Criterio 2.1] Secreto y Configuración:
+  * Se creó el módulo 'src/config/env.js' que lee y valida las variables de entorno.
+  * Si la variable 'JWT_SECRET' no está definida o está vacía, el módulo imprime un
+    error crítico y detiene de inmediato el arranque del servidor con process.exit(1).
+  * Se creó el archivo '.env.example' con marcadores y placeholders.
+  * El archivo '.gitignore' excluye '.env' y se verificó que nunca haya sido commiteado
+    en el historial de Git.
+
+--------------------------------------------------------------------------------
+3. VALIDACIÓN DE ENTRADA CON ZOD Y DTOs
+--------------------------------------------------------------------------------
+- [Criterio 1.2] Esquemas Zod:
+  * Se crearon 'registroSchema' y 'loginSchema' en 'src/schemas/auth.schema.js'.
+  * IMPORTANTE: La contraseña NO se recorta con trim() (se valida con z.string().min(...)).
+  * Se creó el middleware 'src/middlewares/validarAuth.js' ('validarRegistro' y 'validarLogin').
+    Valida la petición y, en caso de éxito, inyecta el DTO saneado en 'req.body' y 'req.dto'.
+    Si falla la validación, responde con código 400 y el listado de errores de Zod.
+
+- [Criterio 1.5] Reglas del Registro:
+  * 'src/dtos/auth.dto.js': 'registroDTO' extrae exclusivamente 'nombre', 'email' y 'password'.
+    Cualquier intento desde el body de enviar 'rol', 'id_rol' o campos internos es ignorado.
+  * El servicio asigna el rol predeterminado de artesano/usuario (id_rol = 2).
+  * Si el email ya existe en la base de datos, el servicio arroja un error con estado 409 (Conflict).
+
+--------------------------------------------------------------------------------
+4. AUTENTICACIÓN, SERVICIOS Y SESIONES (BCRYPT Y JWT)
+--------------------------------------------------------------------------------
+- [Criterio 1.3] Almacenamiento seguro:
+  * 'src/services/auth.service.js' utiliza 'bcrypt.hash' con 10 rondas de salting para
+    encriptar la contraseña antes de guardarla.
+
+- [Criterio 1.4] Respuestas sin datos sensibles:
+  * Tanto el endpoint de registro (201) como el de login (200) y obtención de perfil
+    devuelven únicamente campos públicos (id_usuario, nombre, email, id_rol, created_at).
+  * 'passwordHash' o contraseñas jamás son expuestas al cliente.
+
+- [Criterio 1.6] Verificación de credenciales:
+  * 'autenticarUsuario' utiliza 'await bcrypt.compare(password, usuario.passwordHash)'.
+  * Tanto si el email no existe como si la contraseña es incorrecta, se responde con
+    código 401 y EXACTAMENTE el mismo mensaje ("Credenciales inválidas") para evitar
+    ataques de enumeración de usuarios.
+
+- [Criterio 2.2] Emisión del Token JWT:
+  * El login exitoso emite un token firmado con algoritmo HS256 ('jwt.sign').
+  * 'sub': id del usuario en formato texto (String).
+  * 'expiresIn': tiempo de expiración definido ('24h').
+  * 'jti': identificador único aleatorio (UUIDv4 generado con crypto.randomUUID).
+  * El payload NO contiene email, contraseñas, hashes ni información sensible.
+
+- [Criterio 2.3] Verificación del Token:
+  * Se verifica estrictamente mediante 'jwt.verify' indicando algorithms: ["HS256"].
+  * Se comprueba la validez y presencia de 'sub', 'exp' y 'jti' antes de su uso.
+
+- [Criterio 2.4] Middleware de Autenticación ('src/middlewares/auth.middleware.js'):
+  * Petición sin encabezado Authorization -> 401 + header WWW-Authenticate: Bearer realm="API".
+  * Formato distinto a 'Bearer <token>' -> 400 (Bad Request).
+  * Token inválido, corrupto o vencido -> 401 (Unauthorized).
+  * Token revocado presente en TokenRevocado -> 401 (Unauthorized).
+  * Errores no relacionados a JWT -> derivados al manejador de errores con next(error).
+  * Si es válido, inyecta 'req.usuario' (con 'req.usuario.id') y 'req.tokenInfo' con su jti.
+
+- [Criterio 2.5] Ruta protegida GET /me:
+  * Protegida por el middleware de autenticación.
+  * Obtiene el id del usuario desde 'req.usuario.id'.
+  * Si la cuenta fue eliminada o no existe en la BD -> responde 401.
+  * Si existe, responde con datos públicos (200).
+  * Los endpoints de registro y login se mantienen públicos.
+
+- [Criterio 2.6] Cierre de sesión POST /logout:
+  * Endpoint protegido con el middleware de autenticación.
+  * Guarda el 'jti' del token actual y su fecha de expiración en la tabla TokenRevocado.
+  * Responde con status 204 (No Content).
+  * Si se intenta reutilizar ese mismo token, el middleware responde 401 ("Token revocado").
+  * Otros tokens emitidos para la misma cuenta siguen funcionando con 200 (revocación selectiva por jti).
+
+- [Criterio 2.7] Limpieza periódica de revocaciones:
+  * Módulo 'src/utils/cleanupTask.js'.
+  * Ejecuta una consulta para eliminar únicamente los registros donde 'venceEn <= new Date()'.
+  * Se ejecuta al iniciar el servidor y recurrentemente cada 30 minutos sin bloquear el proceso.
+
+--------------------------------------------------------------------------------
+5. ARQUITECTURA EN CAPAS Y MANEJO CENTRALIZADO DE ERRORES
+--------------------------------------------------------------------------------
+- [Criterio 1.7] Flujo Ruta -> Middleware -> Controlador -> Servicio:
+  * Se creó 'src/middlewares/errorHandler.js' como manejador centralizado de errores.
+  * Atrapa errores personalizados con statusCode (400, 401, 409, etc.), errores de Prisma
+    (P2002 -> 409 Conflicto por duplicados, P2025 -> 404 No encontrado) y errores 500.
+  * Se refactorizaron todos los controladores (auth, usuario, artesano, categoria,
+    inscripcion, localidad, pabellon, producto, rol, rubro, stand, zona) para capturar
+    excepciones y reenviarlas directamente con 'next(error)'.
+
+--------------------------------------------------------------------------------
+6. RUTAS Y COMPATIBILIDAD EN POSTMAN
+--------------------------------------------------------------------------------
+- Se configuraron los endpoints de autenticación en 'src/app.js':
+  * POST /api/auth/register (y alias /api/register, /register)
+  * POST /api/auth/login    (y alias /api/login, /login)
+  * GET  /api/auth/me       (y alias /api/me, /me)
+  * POST /api/auth/logout   (y alias /api/logout, /logout)
+
+- Todos los endpoints de las entidades del evento siguen estando activos:
+  * /api/roles
+  * /api/usuarios
+  * /api/artesanos
+  * /api/localidades
+  * /api/rubros
+  * /api/inscripciones
+  * /api/pabellones
+  * /api/zonas
+  * /api/stands
+  * /api/categorias
+  * /api/productos
+
+================================================================================
+VERIFICACIÓN:
+Se ejecutó una batería de 33 pruebas automatizadas abarcando todos los criterios
+indicados en las imágenes y especificaciones del trabajo práctico. Todos los tests
+concluyeron con 100% de éxito (33 pasados, 0 fallados).
+================================================================================
