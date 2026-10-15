@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 export const usuarioSchema = z.object({
-    email: z.string().trim(),
-    passwordHash: z.string().trim(),
-    id_rol: z.coerce.number().int()
+    nombre: z.string().trim().min(1, "El nombre es obligatorio"),
+    email: z.string().trim().email("El formato del email no es válido"),
+    passwordHash: z.string().optional(),
+    id_rol: z.coerce.number().int().optional()
 });

@@ -19,16 +19,23 @@ model Rol {
 }
 
 model Usuario {
-  id_usuario  String    @id @default(uuid()) @db.Uuid
-  email       String    @unique
-  passwordHash    String
-  id_rol      Int
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
+  id_usuario   String    @id @default(uuid()) @db.Uuid
+  nombre       String
+  email        String    @unique
+  passwordHash String
+  id_rol       Int       @default(2)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
 
-  rol         Rol       @relation(fields: [id_rol], references: [id_rol])
-  artesano    Artesano?
+  rol          Rol       @relation(fields: [id_rol], references: [id_rol])
+  artesano     Artesano?
 
+}
+
+model TokenRevocado {
+  jti       String   @id
+  venceEn   DateTime
+  createdAt DateTime @default(now())
 }
 
 model Artesano {
