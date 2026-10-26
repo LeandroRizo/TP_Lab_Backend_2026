@@ -4,7 +4,8 @@ import {
     crearStand,
     getStandById,
     actualizarStand,
-    eliminarStand
+    eliminarStand,
+    asignarArtesanoAStand
 } from "../services/stand.service.js";
 
 export const obtenerStands = async (req, res, next) => {
@@ -49,6 +50,18 @@ export const eliminar = async (req, res, next) => {
     try {
         await eliminarStand(req.params.id);
         res.status(204).send();
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Criterio 4: Asignación artesano–stand
+export const asignarArtesano = async (req, res, next) => {
+    try {
+        const id_stand = req.params.id || req.body.id_stand;
+        const id_artesano = req.body.id_artesano;
+        const resultado = await asignarArtesanoAStand(id_stand, id_artesano);
+        res.status(200).json(resultado);
     } catch (error) {
         next(error);
     }
