@@ -1,5 +1,6 @@
 import prisma from "../prisma.js";
 
+// Consultas GET públicas (Criterio 4)
 export const getProductos = async (filtros) => {
     const where = {};
     if (filtros.nombre) {
@@ -10,6 +11,10 @@ export const getProductos = async (filtros) => {
     const [productos, total] = await Promise.all([
         prisma.producto.findMany({
             where,
+            include: {
+                artesano: true,
+                categoria: true
+            },
             orderBy: { [filtros.sortBy]: filtros.order },
             skip,
             take: filtros.limit
@@ -25,17 +30,85 @@ export const getProductos = async (filtros) => {
 };
 
 export const getProductoById = async (id) => {
-    return await prisma.producto.findUnique({ where: { id_producto: Number(id) } });
+    return await prisma.producto.findUnique({
+        where: { id_producto: Number(id) },
+        include: {
+            artesano: true,
+            categoria: true
+        }
+    });
 };
 
+// Criterio 5: Alta con id_artesano proveniente de la cuenta autenticada
 export const crearProducto = async (datos) => {
-    return await prisma.producto.create({ data: datos });
+    return await prisma.producto.create({
+        data: {
+            nombre: datos.nombre,
+            descripcion: datos.descripcion,
+            precio: datos.precio,
+            id_categoria: Number(datos.id_categoria),
+            id_artesano: Number(datos.id_artesano)
+        },
+        include: {
+            categoria: true
+        }
+    });
 };
 
-export const actualizarProducto = async (id, datos) => {
-    return await prisma.producto.update({ where: { id_producto: Number(id) }, data: datos });
+// Criterio 5: Modificar filtra por id y por el propietario en la misma consulta del servicio.
+// Producto ajeno o inexistente → 404 con el mismo mensaje.
+export const actualizarProductoPropio = async (id, id_artesano, datos) => {
+    const dataAActualizar = {};
+    if (datos.nombre !== undefined) dataAActualizar.nombre = datos.nombre;
+    if (datos.descripcion !== undefined) dataAActualizar.descripcion = datos.descripcion;
+    if (datos.precio !== undefined) dataAActualizar.precio = datos.precio;
+    if (datos.id_categoria !== undefined) dataAActualizar.id_categoria = Number(datos.id_categoria);
+
+    const resultado = await prisma.producto.updateMany({
+        where: {
+            id_producto: Number(id),
+            id_artesano: Number(id_artesano)
+        },
+        data: dataAActualizar
+    });
+
+    if (resultado.count === 0) {
+        const error = new Error("Producto no encontrado");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    return await prisma.producto.findUnique({
+        where: { id_producto: Number(id) },
+        include: { categoria: true }
+    });
 };
 
-export const eliminarProducto = async (id) => {
-    return await prisma.producto.delete({ where: { id_producto: Number(id) } });
+// Criterio 5: Eliminar filtra por id y por el propietario en la misma consulta del servicio.
+// Producto ajeno o inexistente → 404 con el mismo mensaje.
+export const eliminarProductoPropio = async (id, id_artesano) => {
+    const resultado = await prisma.producto.deleteMany({
+        where: {
+            id_producto: Number(id),
+            id_artesano: Number(id_artesano)
+        }
+    });
+
+    if (resultado.count === 0) {
+        const error = new Error("Producto no encontrado");
+        error.statusCode = 404;
+        throw error;
+    }
+};
+
+// Criterio 5: Listado propio sin parámetros del cliente
+export const getMisProductos = async (id_artesano) => {
+    return await prisma.producto.findMany({
+        where: {
+            id_artesano: Number(id_artesano)
+        },
+        include: {
+            categoria: true
+        }
+    });
 };

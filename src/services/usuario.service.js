@@ -1,4 +1,7 @@
+import bcrypt from "bcrypt";
 import prisma from "../prisma.js";
+
+const BCRYPT_SALT_ROUNDS = 10;
 
 export const getUsuarios = async (filtros) => {
     const where = {};
@@ -18,6 +21,7 @@ export const getUsuarios = async (filtros) => {
                 nombre: true,
                 email: true,
                 id_rol: true,
+                activo: true,
                 created_at: true,
                 updated_at: true,
                 rol: true
@@ -44,9 +48,11 @@ export const getUsuarioById = async (id) => {
             nombre: true,
             email: true,
             id_rol: true,
+            activo: true,
             created_at: true,
             updated_at: true,
-            rol: true
+            rol: true,
+            artesano: true
         }
     });
 };
@@ -59,6 +65,7 @@ export const crearUsuario = async (datos) => {
             nombre: true,
             email: true,
             id_rol: true,
+            activo: true,
             created_at: true,
             updated_at: true
         }
@@ -74,6 +81,7 @@ export const actualizarUsuario = async (id, datos) => {
             nombre: true,
             email: true,
             id_rol: true,
+            activo: true,
             created_at: true,
             updated_at: true
         }
@@ -82,4 +90,100 @@ export const actualizarUsuario = async (id, datos) => {
 
 export const eliminarUsuario = async (id) => {
     return await prisma.usuario.delete({ where: { id_usuario: id } });
+};
+
+// Criterio 7: Endpoints solo para admin - Crear administradores
+export const crearAdministrador = async ({ nombre, email, password }) => {
+    const emailExistente = await prisma.usuario.findUnique({
+        where: { email }
+    });
+
+    if (emailExistente) {
+        const error = new Error("El email ya se encuentra registrado");
+        error.statusCode = 409;
+        throw error;
+    }
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+
+    let rolAdmin = await prisma.rol.findFirst({
+        where: { nombre: { equals: "Administrador", mode: "insensitive" } }
+    });
+    if (!rolAdmin) {
+        rolAdmin = await prisma.rol.findUnique({ where: { id_rol: 1 } });
+    }
+
+    const nuevoAdmin = await prisma.usuario.create({
+        data: {
+            nombre,
+            email,
+            passwordHash,
+            id_rol: rolAdmin.id_rol,
+            activo: true
+        },
+        select: {
+            id_usuario: true,
+            nombre: true,
+            email: true,
+            id_rol: true,
+            activo: true,
+            created_at: true,
+            updated_at: true,
+            rol: true
+        }
+    });
+
+    return nuevoAdmin;
+};
+
+// Criterio 7: Activar o desactivar cuentas (activo booleano validado)
+// Desactivar al último administrador activo → 409
+export const cambiarEstadoCuenta = async (id_usuario, activo) => {
+    const usuario = await prisma.usuario.findUnique({
+        where: { id_usuario },
+        include: { rol: true }
+    });
+
+    if (!usuario) {
+        const error = new Error("Usuario no encontrado");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // Criterio 7: Desactivar al último administrador activo → 409
+    if (activo === false) {
+        const esAdmin = usuario.rol?.nombre?.toLowerCase() === "administrador" || usuario.id_rol === 1;
+
+        if (esAdmin && usuario.activo === true) {
+            const adminsActivos = await prisma.usuario.count({
+                where: {
+                    rol: { nombre: { equals: "Administrador", mode: "insensitive" } },
+                    activo: true
+                }
+            });
+
+            if (adminsActivos <= 1) {
+                const error = new Error("No se puede desactivar al último administrador activo");
+                error.statusCode = 409;
+                throw error;
+            }
+        }
+    }
+
+    const usuarioActualizado = await prisma.usuario.update({
+        where: { id_usuario },
+        data: { activo },
+        select: {
+            id_usuario: true,
+            nombre: true,
+            email: true,
+            id_rol: true,
+            activo: true,
+            created_at: true,
+            updated_at: true,
+            rol: true
+        }
+    });
+
+    return usuarioActualizado;
 };

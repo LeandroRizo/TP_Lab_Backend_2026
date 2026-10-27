@@ -24,6 +24,7 @@ model Usuario {
   email        String    @unique
   passwordHash String
   id_rol       Int       @default(2)
+  activo       Boolean   @default(true)
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
 
@@ -58,6 +59,7 @@ model Artesano {
   rubro         Rubro         @relation(fields: [id_rubro], references: [id_rubro])
   inscripciones Inscripcion[]
   productos     Producto[]
+  solicitudes   Solicitud[]
 
 }
 
@@ -85,7 +87,7 @@ model Rubro {
 model Inscripcion {
   id_inscripcion   Int       @id @default(autoincrement())
   id_artesano      Int
-  id_stand         Int?      // Nullable ya que la inscripción puede estar PENDIENTE o RECHAZADA
+  id_stand         Int?
   anio             Int
   fecha_solicitud  DateTime
   fecha_resolucion DateTime?
@@ -97,6 +99,19 @@ model Inscripcion {
 
   artesano         Artesano  @relation(fields: [id_artesano], references: [id_artesano])
   stand            Stand?    @relation(fields: [id_stand], references: [id_stand])
+
+}
+
+model Solicitud {
+  id_solicitud     Int       @id @default(autoincrement())
+  id_artesano      Int
+  estado           String    @default("PENDIENTE")
+  motivo_rechazo   String?   @db.Text
+  observaciones    String?   @db.Text
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  artesano         Artesano  @relation(fields: [id_artesano], references: [id_artesano])
 
 }
 

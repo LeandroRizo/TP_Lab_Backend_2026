@@ -4,7 +4,9 @@ import {
     crearUsuario,
     getUsuarioById,
     actualizarUsuario,
-    eliminarUsuario
+    eliminarUsuario,
+    crearAdministrador,
+    cambiarEstadoCuenta
 } from "../services/usuario.service.js";
 
 export const obtenerUsuarios = async (req, res, next) => {
@@ -49,6 +51,27 @@ export const eliminar = async (req, res, next) => {
     try {
         await eliminarUsuario(req.params.id);
         res.status(204).send();
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Criterio 7: Endpoints solo para admin - Crear administrador
+export const crearAdmin = async (req, res, next) => {
+    try {
+        const nuevoAdmin = await crearAdministrador(req.body);
+        res.status(201).json(nuevoAdmin);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Criterio 7: Endpoints solo para admin - Activar o desactivar cuentas
+export const cambiarEstado = async (req, res, next) => {
+    try {
+        const { activo } = req.body;
+        const usuarioActualizado = await cambiarEstadoCuenta(req.params.id, activo);
+        res.status(200).json(usuarioActualizado);
     } catch (error) {
         next(error);
     }

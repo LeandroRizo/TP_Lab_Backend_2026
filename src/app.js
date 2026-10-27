@@ -10,11 +10,16 @@ import artesanoRoutes from "./routes/artesano.routes.js";
 import localidadRoutes from "./routes/localidad.routes.js";
 import rubroRoutes from "./routes/rubro.routes.js";
 import inscripcionRoutes from "./routes/inscripcion.routes.js";
+import solicitudRoutes from "./routes/solicitud.routes.js";
 import pabellonRoutes from "./routes/pabellon.routes.js";
 import zonaRoutes from "./routes/zona.routes.js";
 import standRoutes from "./routes/stand.routes.js";
 import categoriaRoutes from "./routes/categoria.routes.js";
 import productoRoutes from "./routes/producto.routes.js";
+
+// Controladores y middlewares para rutas directas
+import { postularse } from "./controllers/auth.controller.js";
+import { validarPostulacion } from "./middlewares/validarAuth.js";
 
 // Middlewares
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -33,6 +38,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api", authRoutes);
 app.use(authRoutes);
 
+// Criterio 4 & 6: Postulación pública directa
+app.post("/api/postulacion", validarPostulacion, postularse);
+app.post("/postulacion", validarPostulacion, postularse);
+
 // Endpoints de entidades del Poncho Digital
 app.use("/api/roles", rolRoutes);
 app.use("/api/usuarios", usuarioRoutes);
@@ -40,6 +49,7 @@ app.use("/api/artesanos", artesanoRoutes);
 app.use("/api/localidades", localidadRoutes);
 app.use("/api/rubros", rubroRoutes);
 app.use("/api/inscripciones", inscripcionRoutes);
+app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/pabellones", pabellonRoutes);
 app.use("/api/zonas", zonaRoutes);
 app.use("/api/stands", standRoutes);
@@ -50,7 +60,7 @@ app.get('/', (req, res) => {
     res.status(200).send(`API Poncho Digital funcionando...`);
 });
 
-// Criterio 1.7: Manejador de errores centralizado (debe ir al final de las rutas)
+// Criterio 1.7 & 8: Manejador de errores centralizado (al final de las rutas)
 app.use(errorHandler);
 
 const servidor = app.listen(PORT, () => {

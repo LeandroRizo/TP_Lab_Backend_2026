@@ -2,7 +2,8 @@ import {
     registrarUsuario,
     autenticarUsuario,
     obtenerUsuarioPorId,
-    revocarToken
+    revocarToken,
+    postularArtesano
 } from "../services/auth.service.js";
 
 // Criterio 1.4: Registro (201) devuelve solo campos públicos
@@ -11,7 +12,6 @@ export const registrar = async (req, res, next) => {
         const nuevoUsuario = await registrarUsuario(req.body);
         res.status(201).json(nuevoUsuario);
     } catch (error) {
-        // Criterio 1.7: Errores hacia el manejador centralizado (next(error))
         next(error);
     }
 };
@@ -21,6 +21,16 @@ export const login = async (req, res, next) => {
     try {
         const resultado = await autenticarUsuario(req.body);
         res.status(200).json(resultado);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Criterio 6: Postulación pública (crea cuenta, Artesano y solicitud PENDIENTE)
+export const postularse = async (req, res, next) => {
+    try {
+        const resultado = await postularArtesano(req.body);
+        res.status(201).json(resultado);
     } catch (error) {
         next(error);
     }

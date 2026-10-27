@@ -3,9 +3,10 @@ import {
     registrar,
     login,
     obtenerMe,
-    logout
+    logout,
+    postularse
 } from "../controllers/auth.controller.js";
-import { validarRegistro, validarLogin } from "../middlewares/validarAuth.js";
+import { validarRegistro, validarLogin, validarPostulacion } from "../middlewares/validarAuth.js";
 import { autenticar } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
@@ -14,6 +15,9 @@ const router = express.Router();
 // Criterio 2.5: Registro y login siguen públicos
 router.post("/register", validarRegistro, registrar);
 router.post("/login", validarLogin, login);
+
+// Criterio 4 & 6: Postulación pública
+router.post("/postulacion", validarPostulacion, postularse);
 
 // Criterio 2.5: Ruta protegida GET /me con middleware de autenticación
 router.get("/me", autenticar, obtenerMe);

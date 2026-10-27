@@ -5,11 +5,10 @@ import prisma from "../prisma.js";
 import config from "../config/env.js";
 import { usuarioPublicoDTO } from "../dtos/auth.dto.js";
 
-// Criterio 1.3: Almacenamiento de la contraseña con bcrypt.hash (costo >= 10)
 const BCRYPT_SALT_ROUNDS = 10;
 
+// Criterio 1.5: Registro simple
 export const registrarUsuario = async ({ nombre, email, password }) => {
-    // Criterio 1.5: Email repetido -> 409
     const usuarioExistente = await prisma.usuario.findUnique({
         where: { email }
     });
@@ -20,44 +19,143 @@ export const registrarUsuario = async ({ nombre, email, password }) => {
         throw error;
     }
 
-    // Hasheo con costo >= 10 (genera hash $2b$...)
     const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
-    // Criterio 1.5: No se permite fijar rol desde el body, se asigna rol predeterminado (2: Artesano/Usuario)
+    // Rol no-artesano por defecto para registros públicos normales
+    let rolPostulante = await prisma.rol.findFirst({
+        where: { nombre: { in: ["Postulante", "Usuario"], mode: "insensitive" } }
+    });
+    if (!rolPostulante) {
+        rolPostulante = await prisma.rol.create({
+            data: { nombre: "Postulante", descripcion: "Usuario registrado o postulante pendiente de aprobacion" }
+        });
+    }
+
     const nuevoUsuario = await prisma.usuario.create({
         data: {
             nombre,
             email,
             passwordHash,
-            id_rol: 2
+            id_rol: rolPostulante.id_rol,
+            activo: true
         },
-        select: {
-            id_usuario: true,
-            nombre: true,
-            email: true,
-            id_rol: true,
-            created_at: true,
-            updated_at: true
-        }
+        include: { rol: true }
     });
 
-    // Criterio 1.4: Respuestas sin datos sensibles (solo campos públicos)
     return usuarioPublicoDTO(nuevoUsuario);
 };
 
-export const autenticarUsuario = async ({ email, password }) => {
-    // Buscar usuario por email
-    const usuario = await prisma.usuario.findUnique({
-        where: { email },
-        include: {
-            rol: true
-        }
+// Criterio 6: Postulación pública - crea cuenta, Artesano y solicitud PENDIENTE en una sola transacción
+export const postularArtesano = async (datos) => {
+    const {
+        nombre,
+        apellido,
+        email,
+        password,
+        dni,
+        telefono,
+        direccion,
+        descripcion,
+        instagram,
+        id_localidad,
+        id_rubro,
+        observaciones
+    } = datos;
+
+    // Verificar email repetido -> 409
+    const emailExistente = await prisma.usuario.findUnique({
+        where: { email }
+    });
+    if (emailExistente) {
+        const error = new Error("El email ya se encuentra registrado");
+        error.statusCode = 409;
+        throw error;
+    }
+
+    // Verificar DNI repetido -> 409
+    const dniExistente = await prisma.artesano.findUnique({
+        where: { dni }
+    });
+    if (dniExistente) {
+        const error = new Error("El DNI ya se encuentra registrado para otro artesano");
+        error.statusCode = 409;
+        throw error;
+    }
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+
+    let rolPostulante = await prisma.rol.findFirst({
+        where: { nombre: { in: ["Postulante", "Usuario"], mode: "insensitive" } }
+    });
+    if (!rolPostulante) {
+        rolPostulante = await prisma.rol.create({
+            data: { nombre: "Postulante", descripcion: "Usuario registrado o postulante pendiente de aprobacion" }
+        });
+    }
+
+    // Una sola operación transaccional
+    const resultado = await prisma.$transaction(async (tx) => {
+        const usuario = await tx.usuario.create({
+            data: {
+                nombre,
+                email,
+                passwordHash,
+                id_rol: rolPostulante.id_rol,
+                activo: true
+            },
+            include: { rol: true }
+        });
+
+        const artesano = await tx.artesano.create({
+            data: {
+                id_usuario: usuario.id_usuario,
+                nombre,
+                apellido,
+                dni,
+                telefono,
+                direccion,
+                descripcion,
+                instagram,
+                id_localidad: Number(id_localidad),
+                id_rubro: Number(id_rubro)
+            }
+        });
+
+        const solicitud = await tx.solicitud.create({
+            data: {
+                id_artesano: artesano.id_artesano,
+                estado: "PENDIENTE",
+                observaciones
+            }
+        });
+
+        return { usuario, artesano, solicitud };
     });
 
-    // Criterio 1.6: Email inexistente y contraseña incorrecta devuelven 401 con el MISMO mensaje
+    return {
+        usuario: usuarioPublicoDTO(resultado.usuario),
+        artesano: resultado.artesano,
+        solicitud: resultado.solicitud
+    };
+};
+
+// Criterio 2: Login - cuenta inactiva → 401 con mensaje genérico ("Credenciales inválidas")
+export const autenticarUsuario = async ({ email, password }) => {
+    const usuario = await prisma.usuario.findUnique({
+        where: { email },
+        include: { rol: true, artesano: true }
+    });
+
     const MENSAJE_ERROR_CREDENCIALES = "Credenciales inválidas";
 
     if (!usuario) {
+        const error = new Error(MENSAJE_ERROR_CREDENCIALES);
+        error.statusCode = 401;
+        throw error;
+    }
+
+    // Criterio 2: El login de una cuenta inactiva → 401 con el mensaje genérico
+    if (!usuario.activo) {
         const error = new Error(MENSAJE_ERROR_CREDENCIALES);
         error.statusCode = 401;
         throw error;
@@ -72,12 +170,6 @@ export const autenticarUsuario = async ({ email, password }) => {
     }
 
     // Criterio 2.2: Emisión del token
-    // - jwt.sign en un servicio
-    // - Algoritmo HS256
-    // - sub = id como texto (string)
-    // - expiresIn definido
-    // - jti único
-    // - Payload SIN email, contraseña, hash ni secretos
     const jti = crypto.randomUUID();
     const token = jwt.sign(
         {
@@ -91,7 +183,6 @@ export const autenticarUsuario = async ({ email, password }) => {
         }
     );
 
-    // Criterio 1.4: Respuesta sin datos sensibles
     return {
         token,
         usuario: usuarioPublicoDTO(usuario)
@@ -99,12 +190,9 @@ export const autenticarUsuario = async ({ email, password }) => {
 };
 
 export const obtenerUsuarioPorId = async (id_usuario) => {
-    // Criterio 2.5: 401 si la cuenta ya no existe
     const usuario = await prisma.usuario.findUnique({
         where: { id_usuario },
-        include: {
-            rol: true
-        }
+        include: { rol: true, artesano: true }
     });
 
     if (!usuario) {
@@ -116,7 +204,6 @@ export const obtenerUsuarioPorId = async (id_usuario) => {
     return usuarioPublicoDTO(usuario);
 };
 
-// Criterio 2.6: Cierre de sesión y revocación de token por jti
 export const revocarToken = async (jti, exp) => {
     const venceEn = exp ? new Date(exp * 1000) : new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -136,7 +223,6 @@ export const esTokenRevocado = async (jti) => {
     return Boolean(revocado);
 };
 
-// Criterio 2.7: Tarea que borra solo los registros con venceEn <= ahora
 export const limpiarTokensRevocados = async () => {
     const ahora = new Date();
     return await prisma.tokenRevocado.deleteMany({
