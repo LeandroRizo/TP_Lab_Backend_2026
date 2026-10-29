@@ -1,0 +1,715 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Poncho Digital - Fiesta Nacional e Internacional del Poncho",
+    "description": "Backend integral para la gestión de postulaciones, artesanos, productos, stands, inscripciones y reportes del evento.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor Local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Ingrese el token JWT obtenido en el login: Bearer <token>"
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Autenticación"],
+        "summary": "Registro público de usuario",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nombre", "email", "password"],
+                "properties": {
+                  "nombre": { "type": "string", "example": "Juan Pérez" },
+                  "email": { "type": "string", "format": "email", "example": "juan@test.com" },
+                  "password": { "type": "string", "minLength": 6, "example": "ClaveSegura123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Usuario registrado exitosamente" },
+          "400": { "description": "Datos de entrada inválidos" },
+          "409": { "description": "El email ya se encuentra registrado" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Autenticación"],
+        "summary": "Inicio de sesión",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "admin@poncho.gob.ar" },
+                  "password": { "type": "string", "example": "AdminPoncho2026!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login exitoso; retorna token JWT y datos del usuario" },
+          "401": { "description": "Credenciales inválidas o cuenta desactivada" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Autenticación"],
+        "summary": "Perfil del usuario autenticado",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Datos del perfil y rol vigente" },
+          "401": { "description": "No autenticado o cuenta desactivada" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Autenticación"],
+        "summary": "Cierre de sesión y revocación del token activo",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Sesión cerrada correctamente" },
+          "401": { "description": "Token inválido o expirado" }
+        }
+      }
+    },
+    "/api/postulacion": {
+      "post": {
+        "tags": ["Postulaciones"],
+        "summary": "Postulación pública de artesano (crea cuenta, artesano y solicitud PENDIENTE)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nombre", "apellido", "email", "password", "dni", "id_localidad", "id_rubro"],
+                "properties": {
+                  "nombre": { "type": "string", "example": "Rosa" },
+                  "apellido": { "type": "string", "example": "Gomez" },
+                  "email": { "type": "string", "format": "email", "example": "rosa.gomez@artesanos.com" },
+                  "password": { "type": "string", "minLength": 6, "example": "RosaArtesana2026!" },
+                  "dni": { "type": "string", "example": "35123999" },
+                  "telefono": { "type": "string", "example": "3834112233" },
+                  "direccion": { "type": "string", "example": "San Martin 450" },
+                  "descripcion": { "type": "string", "example": "Tejedora tradicional" },
+                  "instagram": { "type": "string", "example": "@rosagomez.tejidos" },
+                  "id_localidad": { "type": "integer", "example": 1 },
+                  "id_rubro": { "type": "integer", "example": 1 },
+                  "observaciones": { "type": "string", "example": "Primera participación" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Postulación registrada en estado PENDIENTE" },
+          "400": { "description": "Datos de postulación inválidos" },
+          "409": { "description": "Email o DNI ya registrado" }
+        }
+      }
+    },
+    "/api/solicitudes": {
+      "get": {
+        "tags": ["Solicitudes"],
+        "summary": "Listar solicitudes (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "estado", "in": "query", "schema": { "type": "string", "enum": ["PENDIENTE", "APROBADA", "RECHAZADA", "MODIFICACION"] } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": { "description": "Listado de solicitudes con paginación" },
+          "401": { "description": "No autenticado" },
+          "403": { "description": "Permisos insuficientes (requiere ADMINISTRADOR)" }
+        }
+      }
+    },
+    "/api/solicitudes/{id}": {
+      "get": {
+        "tags": ["Solicitudes"],
+        "summary": "Detalle de una solicitud (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Detalle de la solicitud" },
+          "404": { "description": "Solicitud no encontrada" }
+        }
+      }
+    },
+    "/api/solicitudes/{id}/resolver": {
+      "put": {
+        "tags": ["Solicitudes"],
+        "summary": "Resolver solicitud: APROBADA, RECHAZADA o MODIFICACION (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["estado"],
+                "properties": {
+                  "estado": { "type": "string", "enum": ["APROBADA", "RECHAZADA", "MODIFICACION"], "example": "APROBADA" },
+                  "motivo_rechazo": { "type": "string", "example": "Documentación incompleta" },
+                  "observaciones": { "type": "string", "example": "Aprobación verificada" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Solicitud resuelta. Si fue aprobada, habilita rol ARTESANO atómicamente" },
+          "400": { "description": "Estado de resolución inválido" },
+          "404": { "description": "Solicitud no encontrada" },
+          "409": { "description": "La solicitud ya fue resuelta previamente" }
+        }
+      },
+      "patch": {
+        "tags": ["Solicitudes"],
+        "summary": "Resolver solicitud (alias PATCH)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Solicitud resuelta" }
+        }
+      }
+    },
+    "/api/usuarios": {
+      "get": {
+        "tags": ["Gestión de Cuentas"],
+        "summary": "Listar cuentas de usuario (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "email", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": { "description": "Listado de usuarios" },
+          "403": { "description": "Solo ADMINISTRADOR" }
+        }
+      }
+    },
+    "/api/usuarios/{id}": {
+      "get": {
+        "tags": ["Gestión de Cuentas"],
+        "summary": "Obtener usuario por ID (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Detalle del usuario" },
+          "404": { "description": "Usuario no encontrado" }
+        }
+      }
+    },
+    "/api/usuarios/administrador": {
+      "post": {
+        "tags": ["Gestión de Cuentas"],
+        "summary": "Crear administrador (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nombre", "email", "password"],
+                "properties": {
+                  "nombre": { "type": "string", "example": "Admin Coordinador" },
+                  "email": { "type": "string", "format": "email", "example": "coordinador@poncho.gob.ar" },
+                  "password": { "type": "string", "minLength": 6, "example": "CoordPoncho2026!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Administrador creado exitosamente" },
+          "409": { "description": "El email ya se encuentra registrado" }
+        }
+      }
+    },
+    "/api/usuarios/{id}/estado": {
+      "patch": {
+        "tags": ["Gestión de Cuentas"],
+        "summary": "Activar o desactivar cuenta (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["activo"],
+                "properties": {
+                  "activo": { "type": "boolean", "example": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Estado de cuenta modificado" },
+          "400": { "description": "El campo activo debe ser booleano" },
+          "409": { "description": "No se puede desactivar al último administrador activo" }
+        }
+      }
+    },
+    "/api/productos": {
+      "get": {
+        "tags": ["Productos"],
+        "summary": "Catálogo público de productos con filtros y paginación",
+        "parameters": [
+          { "name": "nombre", "in": "query", "schema": { "type": "string" } },
+          { "name": "id_categoria", "in": "query", "schema": { "type": "integer" } },
+          { "name": "id_artesano", "in": "query", "schema": { "type": "integer" } },
+          { "name": "precioMin", "in": "query", "schema": { "type": "number" } },
+          { "name": "precioMax", "in": "query", "schema": { "type": "number" } },
+          { "name": "sortBy", "in": "query", "schema": { "type": "string", "enum": ["nombre", "precio", "created_at"] } },
+          { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": { "description": "Listado de productos con metadatos de paginación" }
+        }
+      },
+      "post": {
+        "tags": ["Productos"],
+        "summary": "Alta de producto (Solo ARTESANO)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nombre", "precio", "id_categoria"],
+                "properties": {
+                  "nombre": { "type": "string", "example": "Poncho de Vicuña Puro" },
+                  "descripcion": { "type": "string", "example": "Tejido artesanal" },
+                  "precio": { "type": "number", "example": 250000 },
+                  "id_categoria": { "type": "integer", "example": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Producto creado y vinculado al artesano autenticado" },
+          "401": { "description": "No autenticado" },
+          "403": { "description": "Requiere rol ARTESANO" }
+        }
+      }
+    },
+    "/api/productos/mis-productos": {
+      "get": {
+        "tags": ["Productos"],
+        "summary": "Listar productos del artesano autenticado (Solo ARTESANO)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Productos pertenecientes al artesano autenticado" },
+          "403": { "description": "Requiere rol ARTESANO" }
+        }
+      }
+    },
+    "/api/productos/{id}": {
+      "get": {
+        "tags": ["Productos"],
+        "summary": "Detalle público de un producto",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Detalle del producto" },
+          "404": { "description": "Producto no encontrado" }
+        }
+      },
+      "put": {
+        "tags": ["Productos"],
+        "summary": "Modificar producto propio (Solo ARTESANO propietario)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nombre": { "type": "string" },
+                  "descripcion": { "type": "string" },
+                  "precio": { "type": "number" },
+                  "id_categoria": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Producto modificado exitosamente" },
+          "404": { "description": "Producto no encontrado (ajeno o inexistente)" }
+        }
+      },
+      "delete": {
+        "tags": ["Productos"],
+        "summary": "Eliminar producto propio (Solo ARTESANO propietario)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Producto eliminado" },
+          "404": { "description": "Producto no encontrado (ajeno o inexistente)" }
+        }
+      }
+    },
+    "/api/stands": {
+      "get": {
+        "tags": ["Stands"],
+        "summary": "Listado público de stands con filtros por pabellón, sector y estado",
+        "parameters": [
+          { "name": "numero", "in": "query", "schema": { "type": "integer" } },
+          { "name": "id_pabellon", "in": "query", "schema": { "type": "integer" } },
+          { "name": "pabellon", "in": "query", "schema": { "type": "string" } },
+          { "name": "id_zona", "in": "query", "schema": { "type": "integer" } },
+          { "name": "sector", "in": "query", "schema": { "type": "string" } },
+          { "name": "estado", "in": "query", "schema": { "type": "string", "enum": ["DISPONIBLE", "OCUPADO"] } }
+        ],
+        "responses": {
+          "200": { "description": "Listado de stands" }
+        }
+      },
+      "post": {
+        "tags": ["Stands"],
+        "summary": "Crear stand (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Stand creado" },
+          "403": { "description": "Solo ADMINISTRADOR" }
+        }
+      }
+    },
+    "/api/stands/{id}": {
+      "get": {
+        "tags": ["Stands"],
+        "summary": "Detalle de un stand",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Detalle del stand" },
+          "404": { "description": "Stand no encontrado" }
+        }
+      },
+      "put": {
+        "tags": ["Stands"],
+        "summary": "Actualizar stand (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Stand actualizado" }
+        }
+      },
+      "delete": {
+        "tags": ["Stands"],
+        "summary": "Eliminar stand (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Stand eliminado" }
+        }
+      }
+    },
+    "/api/stands/ubicacion": {
+      "get": {
+        "tags": ["Stands"],
+        "summary": "Mapa de stands con ubicación: pabellón, sector y coordenadas JSON",
+        "responses": {
+          "200": { "description": "Listado de stands con coordenadas y estado" }
+        }
+      }
+    },
+    "/api/stands/{id}/ubicacion": {
+      "get": {
+        "tags": ["Stands"],
+        "summary": "Ubicación de un stand específico",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Ubicación del stand" },
+          "404": { "description": "Stand no encontrado" }
+        }
+      }
+    },
+    "/api/stands/asignar": {
+      "post": {
+        "tags": ["Stands"],
+        "summary": "Asignar artesano a stand (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id_stand", "id_artesano"],
+                "properties": {
+                  "id_stand": { "type": "integer", "example": 1 },
+                  "id_artesano": { "type": "integer", "example": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Artesano asignado al stand" },
+          "404": { "description": "Stand o artesano no encontrado" }
+        }
+      }
+    },
+    "/api/artesanos": {
+      "get": {
+        "tags": ["Artesanos"],
+        "summary": "Listado público de artesanos con filtros",
+        "parameters": [
+          { "name": "nombre", "in": "query", "schema": { "type": "string" } },
+          { "name": "id_localidad", "in": "query", "schema": { "type": "integer" } },
+          { "name": "id_rubro", "in": "query", "schema": { "type": "integer" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": { "description": "Listado de artesanos" }
+        }
+      },
+      "post": {
+        "tags": ["Artesanos"],
+        "summary": "Crear artesano (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Artesano creado" },
+          "403": { "description": "Solo ADMINISTRADOR" }
+        }
+      }
+    },
+    "/api/artesanos/{id}": {
+      "get": {
+        "tags": ["Artesanos"],
+        "summary": "Detalle de un artesano",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Detalle del artesano" },
+          "404": { "description": "Artesano no encontrado" }
+        }
+      },
+      "put": {
+        "tags": ["Artesanos"],
+        "summary": "Actualizar artesano (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Artesano modificado" }
+        }
+      },
+      "delete": {
+        "tags": ["Artesanos"],
+        "summary": "Eliminar artesano (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Artesano eliminado" }
+        }
+      }
+    },
+    "/api/roles": {
+      "get": {
+        "tags": ["Roles"],
+        "summary": "Listar roles",
+        "responses": { "200": { "description": "Listado de roles" } }
+      },
+      "post": {
+        "tags": ["Roles"],
+        "summary": "Crear rol (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Rol creado" },
+          "403": { "description": "Solo ADMINISTRADOR" }
+        }
+      }
+    },
+    "/api/categorias": {
+      "get": {
+        "tags": ["Categorías"],
+        "summary": "Listar categorías públicas",
+        "responses": { "200": { "description": "Listado de categorías" } }
+      },
+      "post": {
+        "tags": ["Categorías"],
+        "summary": "Crear categoría (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "201": { "description": "Categoría creada" } }
+      }
+    },
+    "/api/localidades": {
+      "get": {
+        "tags": ["Localidades"],
+        "summary": "Listar localidades públicas",
+        "responses": { "200": { "description": "Listado de localidades" } }
+      },
+      "post": {
+        "tags": ["Localidades"],
+        "summary": "Crear localidad (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "201": { "description": "Localidad creada" } }
+      }
+    },
+    "/api/rubros": {
+      "get": {
+        "tags": ["Rubros"],
+        "summary": "Listar rubros públicos",
+        "responses": { "200": { "description": "Listado de rubros" } }
+      },
+      "post": {
+        "tags": ["Rubros"],
+        "summary": "Crear rubro (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "201": { "description": "Rubro creado" } }
+      }
+    },
+    "/api/pabellones": {
+      "get": {
+        "tags": ["Pabellones"],
+        "summary": "Listar pabellones públicos",
+        "responses": { "200": { "description": "Listado de pabellones" } }
+      },
+      "post": {
+        "tags": ["Pabellones"],
+        "summary": "Crear pabellón (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "201": { "description": "Pabellón creado" } }
+      }
+    },
+    "/api/zonas": {
+      "get": {
+        "tags": ["Zonas / Sectores"],
+        "summary": "Listar zonas públicas",
+        "responses": { "200": { "description": "Listado de zonas" } }
+      },
+      "post": {
+        "tags": ["Zonas / Sectores"],
+        "summary": "Crear zona (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "201": { "description": "Zona creada" } }
+      }
+    },
+    "/api/reportes": {
+      "get": {
+        "tags": ["Reportes"],
+        "summary": "Reporte general consolidado (artesanos, rubros, localidades, stands y búsquedas) (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Reporte consolidado" },
+          "403": { "description": "Solo ADMINISTRADOR" }
+        }
+      }
+    },
+    "/api/reportes/artesanos-por-localidad": {
+      "get": {
+        "tags": ["Reportes"],
+        "summary": "Reporte de artesanos agrupados por localidad (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Conteo por localidad" } }
+      }
+    },
+    "/api/reportes/artesanos-por-rubro": {
+      "get": {
+        "tags": ["Reportes"],
+        "summary": "Reporte de artesanos agrupados por rubro (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Conteo por rubro" } }
+      }
+    },
+    "/api/reportes/stands-ocupacion": {
+      "get": {
+        "tags": ["Reportes"],
+        "summary": "Reporte de stands ocupados vs disponibles (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Ocupación de stands" } }
+      }
+    },
+    "/api/reportes/productos-por-artesano": {
+      "get": {
+        "tags": ["Reportes"],
+        "summary": "Reporte de cantidad de productos por artesano (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Conteo de productos por artesano" } }
+      }
+    },
+    "/api/reportes/tendencias-busqueda": {
+      "get": {
+        "tags": ["Reportes"],
+        "summary": "Estadísticas de tendencias de búsqueda de visitantes (Solo ADMIN)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Términos más buscados y frecuencias" } }
+      }
+    },
+    "/api/estadisticas/tendencias": {
+      "get": {
+        "tags": ["Estadísticas"],
+        "summary": "Tendencias de búsqueda públicas",
+        "responses": { "200": { "description": "Métricas públicas de búsqueda" } }
+      }
+    }
+  }
+}

@@ -6,6 +6,17 @@ export const getProductos = async (filtros) => {
     if (filtros.nombre) {
         where.nombre = { contains: filtros.nombre, mode: 'insensitive' };
     }
+    if (filtros.id_categoria) {
+        where.id_categoria = Number(filtros.id_categoria);
+    }
+    if (filtros.id_artesano) {
+        where.id_artesano = Number(filtros.id_artesano);
+    }
+    if (filtros.precioMin !== undefined || filtros.precioMax !== undefined) {
+        where.precio = {};
+        if (filtros.precioMin !== undefined) where.precio.gte = Number(filtros.precioMin);
+        if (filtros.precioMax !== undefined) where.precio.lte = Number(filtros.precioMax);
+    }
 
     const skip = (filtros.page - 1) * filtros.limit;
     const [productos, total] = await Promise.all([

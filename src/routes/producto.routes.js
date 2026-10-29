@@ -13,11 +13,12 @@ import { validarProductoQuery } from "../middlewares/validarProductoQuery.js";
 import { autenticar } from "../middlewares/auth.middleware.js";
 import { contextoUsuario } from "../middlewares/contextoUsuario.js";
 import { autorizarRoles } from "../middlewares/autorizarRoles.js";
+import { registroConsultas } from "../middlewares/registroConsultas.js";
 
 const router = express.Router();
 
 // Criterio 4: Consultas GET públicas
-router.get("/", validarProductoQuery, obtenerProductos);
+router.get("/", registroConsultas("productos"), validarProductoQuery, obtenerProductos);
 
 // Criterio 5: Listado propio sin parámetros del cliente (Solo ARTESANO)
 // Orden en la ruta: autenticación → cuenta → rol → controlador
@@ -32,6 +33,7 @@ router.get("/:id", obtenerPorId);
 // Orden en la ruta: autenticación → cuenta → rol → validación → controlador
 router.post("/", autenticar, contextoUsuario, autorizarRoles("ARTESANO"), validarProducto, crear);
 router.put("/:id", autenticar, contextoUsuario, autorizarRoles("ARTESANO"), validarProducto, actualizar);
+router.patch("/:id", autenticar, contextoUsuario, autorizarRoles("ARTESANO"), validarProducto, actualizar);
 router.delete("/:id", autenticar, contextoUsuario, autorizarRoles("ARTESANO"), eliminar);
 
 export default router;

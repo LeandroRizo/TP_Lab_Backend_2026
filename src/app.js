@@ -16,6 +16,9 @@ import zonaRoutes from "./routes/zona.routes.js";
 import standRoutes from "./routes/stand.routes.js";
 import categoriaRoutes from "./routes/categoria.routes.js";
 import productoRoutes from "./routes/producto.routes.js";
+import reporteRoutes from "./routes/reporte.routes.js";
+import estadisticaRoutes from "./routes/estadistica.routes.js";
+import docRoutes from "./routes/doc.routes.js";
 
 // Controladores y middlewares para rutas directas
 import { postularse } from "./controllers/auth.controller.js";
@@ -31,6 +34,10 @@ const app = express();
 const PORT = config.port;
 
 app.use(express.json());
+
+// Documentación Swagger / OpenAPI 3.0 interactiva
+app.use("/api-docs", docRoutes);
+app.use("/docs", docRoutes);
 
 // Criterio 1.2, 1.4, 1.5, 1.6, 2.2, 2.5, 2.6: Autenticación, registro, login, GET /me y POST /logout
 app.use("/api/auth", authRoutes);
@@ -55,6 +62,10 @@ app.use("/api/zonas", zonaRoutes);
 app.use("/api/stands", standRoutes);
 app.use("/api/categorias", categoriaRoutes);
 app.use("/api/productos", productoRoutes);
+
+// Reportes administrativos y estadísticas públicas
+app.use("/api/reportes", reporteRoutes);
+app.use("/api/estadisticas", estadisticaRoutes);
 
 app.get('/', (req, res) => {
     res.status(200).send(`API Poncho Digital funcionando...`);

@@ -95,8 +95,15 @@ export const resolverSolicitud = async (id_solicitud, { estado, motivo_rechazo, 
         throw error;
     }
 
-    const estadoNormalizado = estado.toUpperCase();
-    const esAprobada = estadoNormalizado === "APROBADA" || estadoNormalizado === "APROBADO";
+    const ESTADOS_VALIDOS = ["APROBADA", "RECHAZADA", "MODIFICACION"];
+    const estadoNormalizado = estado ? String(estado).trim().toUpperCase() : null;
+
+    if (!estadoNormalizado || !ESTADOS_VALIDOS.includes(estadoNormalizado)) {
+        const error = new Error("Estado de resolución inválido. Debe ser APROBADA, RECHAZADA o MODIFICACION");
+        error.statusCode = 400;
+        throw error;
+    }
+    const esAprobada = estadoNormalizado === "APROBADA";
 
     // Transacción atómica
     const solicitudActualizada = await prisma.$transaction(async (tx) => {
@@ -125,7 +132,9 @@ export const resolverSolicitud = async (id_solicitud, { estado, motivo_rechazo, 
                 where: { nombre: { equals: "Artesano", mode: "insensitive" } }
             });
             if (!rolArtesano) {
-                rolArtesano = await tx.rol.findUnique({ where: { id_rol: 2 } });
+                const error = new Error("El rol Artesano no se encuentra configurado en el sistema");
+                error.statusCode = 500;
+                throw error;
             }
 
             if (rolArtesano) {

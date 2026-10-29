@@ -8,13 +8,16 @@ import {
 } from "../controllers/rol.controller.js";
 import { validarRol } from "../middlewares/validarRol.js";
 import { validarRolQuery } from "../middlewares/validarRolQuery.js";
+import { autenticar } from "../middlewares/auth.middleware.js";
+import { contextoUsuario } from "../middlewares/contextoUsuario.js";
+import { autorizarRoles } from "../middlewares/autorizarRoles.js";
 
 const router = express.Router();
 
 router.get("/", validarRolQuery, obtenerRols);
-router.post("/", validarRol, crear);
+router.post("/", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarRol, crear);
 router.get("/:id", obtenerPorId);
-router.put("/:id", validarRol, actualizar);
-router.delete("/:id", eliminar);
+router.put("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarRol, actualizar);
+router.delete("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), eliminar);
 
 export default router;

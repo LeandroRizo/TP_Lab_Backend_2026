@@ -1,7 +1,12 @@
 import { z } from "zod";
 
 export const resolverSolicitudSchema = z.object({
-    estado: z.string().trim().min(1, "El estado es obligatorio"),
+    estado: z.preprocess(
+        (val) => (typeof val === "string" ? val.trim().toUpperCase() : val),
+        z.enum(["APROBADA", "RECHAZADA", "MODIFICACION"], {
+            errorMap: () => ({ message: "El estado debe ser APROBADA, RECHAZADA o MODIFICACION" })
+        })
+    ),
     motivo_rechazo: z.string().trim().optional(),
     observaciones: z.string().trim().optional()
 });

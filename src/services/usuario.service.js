@@ -106,14 +106,17 @@ export const crearAdministrador = async ({ nombre, email, password }) => {
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
-    let rolAdmin = await prisma.rol.findFirst({
+    return await prisma.$transaction(async (tx) => {
+        let rolAdmin = await tx.rol.findFirst({
         where: { nombre: { equals: "Administrador", mode: "insensitive" } }
     });
     if (!rolAdmin) {
-        rolAdmin = await prisma.rol.findUnique({ where: { id_rol: 1 } });
+        rolAdmin = await tx.rol.create({
+            data: { nombre: "Administrador", descripcion: "Rol de Administrador del sistema" }
+        });
     }
 
-    const nuevoAdmin = await prisma.usuario.create({
+    const nuevoAdmin = await tx.usuario.create({
         data: {
             nombre,
             email,
@@ -133,13 +136,15 @@ export const crearAdministrador = async ({ nombre, email, password }) => {
         }
     });
 
-    return nuevoAdmin;
+        return nuevoAdmin;
+    });
 };
 
 // Criterio 7: Activar o desactivar cuentas (activo booleano validado)
 // Desactivar al último administrador activo → 409
 export const cambiarEstadoCuenta = async (id_usuario, activo) => {
-    const usuario = await prisma.usuario.findUnique({
+    return await prisma.$transaction(async (tx) => {
+        const usuario = await tx.usuario.findUnique({
         where: { id_usuario },
         include: { rol: true }
     });
@@ -152,10 +157,10 @@ export const cambiarEstadoCuenta = async (id_usuario, activo) => {
 
     // Criterio 7: Desactivar al último administrador activo → 409
     if (activo === false) {
-        const esAdmin = usuario.rol?.nombre?.toLowerCase() === "administrador" || usuario.id_rol === 1;
+        const esAdmin = usuario.rol?.nombre?.toLowerCase() === "administrador";
 
         if (esAdmin && usuario.activo === true) {
-            const adminsActivos = await prisma.usuario.count({
+            const adminsActivos = await tx.usuario.count({
                 where: {
                     rol: { nombre: { equals: "Administrador", mode: "insensitive" } },
                     activo: true
@@ -170,7 +175,7 @@ export const cambiarEstadoCuenta = async (id_usuario, activo) => {
         }
     }
 
-    const usuarioActualizado = await prisma.usuario.update({
+    const usuarioActualizado = await tx.usuario.update({
         where: { id_usuario },
         data: { activo },
         select: {
@@ -185,5 +190,6 @@ export const cambiarEstadoCuenta = async (id_usuario, activo) => {
         }
     });
 
-    return usuarioActualizado;
+        return usuarioActualizado;
+    });
 };
