@@ -5,7 +5,9 @@ import {
     obtenerPorId,
     actualizar,
     eliminar,
-    asignarArtesano
+    asignarArtesano,
+    obtenerUbicaciones,
+    obtenerUbicacionPorId
 } from "../controllers/stand.controller.js";
 
 import { validarStand } from "../middlewares/validarStand.js";
@@ -14,11 +16,14 @@ import { validarAsignarStand } from "../middlewares/validarSolicitud.js";
 import { autenticar } from "../middlewares/auth.middleware.js";
 import { contextoUsuario } from "../middlewares/contextoUsuario.js";
 import { autorizarRoles } from "../middlewares/autorizarRoles.js";
+import { registroConsultas } from "../middlewares/registroConsultas.js";
 
 const router = express.Router();
 
 // Criterio 4: Consultas GET públicas
-router.get("/", validarStandQuery, obtenerStands);
+router.get("/", registroConsultas("stands"), validarStandQuery, obtenerStands);
+router.get("/ubicacion", obtenerUbicaciones);
+router.get("/:id/ubicacion", obtenerUbicacionPorId);
 router.get("/:id", obtenerPorId);
 
 // Criterio 4: Solo ADMINISTRADOR: alta, modificación y baja de stands; asignación artesano–stand

@@ -201,6 +201,12 @@ export const obtenerUsuarioPorId = async (id_usuario) => {
         throw error;
     }
 
+    if (!usuario.activo) {
+        const error = new Error("Cuenta desactivada");
+        error.statusCode = 403;
+        throw error;
+    }
+
     return usuarioPublicoDTO(usuario);
 };
 

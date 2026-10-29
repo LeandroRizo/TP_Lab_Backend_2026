@@ -8,6 +8,7 @@ import {
 } from "../controllers/auth.controller.js";
 import { validarRegistro, validarLogin, validarPostulacion } from "../middlewares/validarAuth.js";
 import { autenticar } from "../middlewares/auth.middleware.js";
+import { contextoUsuario } from "../middlewares/contextoUsuario.js";
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ router.post("/login", validarLogin, login);
 router.post("/postulacion", validarPostulacion, postularse);
 
 // Criterio 2.5: Ruta protegida GET /me con middleware de autenticación
-router.get("/me", autenticar, obtenerMe);
+router.get("/me", autenticar, contextoUsuario, obtenerMe);
 
 // Criterio 2.6: Cierre de sesión POST /logout
 router.post("/logout", autenticar, logout);

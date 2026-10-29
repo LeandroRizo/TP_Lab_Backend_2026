@@ -5,7 +5,9 @@ import {
     getStandById,
     actualizarStand,
     eliminarStand,
-    asignarArtesanoAStand
+    asignarArtesanoAStand,
+    getStandsConUbicacion,
+    getStandUbicacionById
 } from "../services/stand.service.js";
 
 export const obtenerStands = async (req, res, next) => {
@@ -62,6 +64,26 @@ export const asignarArtesano = async (req, res, next) => {
         const id_artesano = req.body.id_artesano;
         const resultado = await asignarArtesanoAStand(id_stand, id_artesano);
         res.status(200).json(resultado);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Endpoint de stands con ubicación: pabellón, sector y coordenadas en JSON
+export const obtenerUbicaciones = async (req, res, next) => {
+    try {
+        const data = await getStandsConUbicacion();
+        res.status(200).json(data);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const obtenerUbicacionPorId = async (req, res, next) => {
+    try {
+        const item = await getStandUbicacionById(req.params.id);
+        if (!item) return res.status(404).json({ mensaje: "Stand no encontrado" });
+        res.status(200).json(item);
     } catch (error) {
         next(error);
     }

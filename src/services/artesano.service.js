@@ -11,11 +11,21 @@ export const getArtesanos = async (filtros) => {
     if (filtros.dni) {
         where.dni = { contains: filtros.dni, mode: 'insensitive' };
     }
+    if (filtros.id_localidad) {
+        where.id_localidad = Number(filtros.id_localidad);
+    }
+    if (filtros.id_rubro) {
+        where.id_rubro = Number(filtros.id_rubro);
+    }
 
     const skip = (filtros.page - 1) * filtros.limit;
     const [artesanos, total] = await Promise.all([
         prisma.artesano.findMany({
             where,
+            include: {
+                localidad: true,
+                rubro: true
+            },
             orderBy: { [filtros.sortBy]: filtros.order },
             skip,
             take: filtros.limit
@@ -31,7 +41,14 @@ export const getArtesanos = async (filtros) => {
 };
 
 export const getArtesanoById = async (id) => {
-    return await prisma.artesano.findUnique({ where: { id_artesano: Number(id) } });
+    return await prisma.artesano.findUnique({
+        where: { id_artesano: Number(id) },
+        include: {
+            localidad: true,
+            rubro: true,
+            productos: true
+        }
+    });
 };
 
 export const crearArtesano = async (datos) => {

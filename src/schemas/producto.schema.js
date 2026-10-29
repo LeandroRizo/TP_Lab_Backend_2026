@@ -8,3 +8,5 @@ export const productoSchema = z.object({
     precio: z.coerce.number().positive("El precio debe ser un número positivo"),
     id_artesano: z.coerce.number().int().optional() // Ignorado en el alta si viene en el body
 });
+
+export const productoActualizarSchema = productoSchema.partial();
