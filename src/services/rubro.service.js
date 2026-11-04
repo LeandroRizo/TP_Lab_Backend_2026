@@ -1,4 +1,5 @@
 import prisma from "../prisma.js";
+import { invalidarCache } from "../utils/cache.js";
 
 export const getRubros = async (filtros) => {
     const where = {};
@@ -29,13 +30,19 @@ export const getRubroById = async (id) => {
 };
 
 export const crearRubro = async (datos) => {
-    return await prisma.rubro.create({ data: datos });
+    const creado = await prisma.rubro.create({ data: datos });
+    invalidarCache("reportes:general", "reportes:artesanos-rubro");
+    return creado;
 };
 
 export const actualizarRubro = async (id, datos) => {
-    return await prisma.rubro.update({ where: { id_rubro: Number(id) }, data: datos });
+    const actualizado = await prisma.rubro.update({ where: { id_rubro: Number(id) }, data: datos });
+    invalidarCache("reportes:general", "reportes:artesanos-rubro");
+    return actualizado;
 };
 
 export const eliminarRubro = async (id) => {
-    return await prisma.rubro.delete({ where: { id_rubro: Number(id) } });
+    const eliminado = await prisma.rubro.delete({ where: { id_rubro: Number(id) } });
+    invalidarCache("reportes:general", "reportes:artesanos-rubro");
+    return eliminado;
 };

@@ -1,34 +1,42 @@
-import { describe, it, before } from "node:test";
+import { describe, it, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
-import prisma from "../src/prisma.js";
-import { BASE_URL, generarToken, obtenerUsuariosPrueba } from "./testHelper.js";
 
-describe("02. Productos y Propiedad de Artesanos", () => {
+// Criterio 2.4: Aserciones de NODE_ENV y del nombre de la base antes de importar la app
+assert.equal(process.env.NODE_ENV, "test", "NODE_ENV debe ser 'test'");
+assert.match(process.env.DATABASE_URL || "", /_test(\?|$)/i, "DATABASE_URL debe ser una base *_test");
+
+const {
+    BASE_URL,
+    prisma,
+    generarToken,
+    obtenerUsuariosPrueba,
+    limpiarBaseDeDatos,
+    cerrarEntornoPrueba
+} = await import("./testHelper.js");
+
+describe("02. Productos, Persistencia en Base y Propiedad de Artesanos (Criterios 2.4 y 2.5)", () => {
     let ctx;
     let usuarioArtesano2;
     let artesano2Token;
     let categoria;
-    let productoCreadoId;
+    let productoInicial;
 
-    before(async () => {
+    beforeEach(async () => {
+        // Criterio 2.4: Limpieza en beforeEach en orden de dependencias
+        await limpiarBaseDeDatos();
         ctx = await obtenerUsuariosPrueba();
 
-        // Categoría para pruebas
-        categoria = await prisma.categoria.findFirst();
-        if (!categoria) {
-            categoria = await prisma.categoria.create({
-                data: { nombre: "Tejidos Test", descripcion: "Categoría de prueba" }
-            });
-        }
+        categoria = await prisma.categoria.create({
+            data: { nombre: "Tejidos Test", descripcion: "Categoría de prueba" }
+        });
 
-        // Segundo artesano independiente para probar propiedad cruzada
-        let localidad = await prisma.localidad.findFirst();
-        let rubro = await prisma.rubro.findFirst();
+        const localidad = await prisma.localidad.findFirst();
+        const rubro = await prisma.rubro.findFirst();
 
         usuarioArtesano2 = await prisma.usuario.create({
             data: {
                 nombre: "Artesano Dos",
-                email: `artesano2_${Date.now()}@poncho.test`,
+                email: `artesano2_${Date.now()}_${Math.floor(Math.random() * 1000)}@poncho.test`,
                 passwordHash: "$2b$10$abcdefghijklmnopqrstuvABCDEFGHIJKLMNOPQRSTUVWXYZ012",
                 id_rol: ctx.rolArtesano.id_rol,
                 activo: true,
@@ -36,7 +44,7 @@ describe("02. Productos y Propiedad de Artesanos", () => {
                     create: {
                         nombre: "Artesano",
                         apellido: "Dos",
-                        dni: `DNI_2_${Date.now()}`,
+                        dni: `DNI_2_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
                         id_localidad: localidad.id_localidad,
                         id_rubro: rubro.id_rubro
                     }
@@ -45,6 +53,21 @@ describe("02. Productos y Propiedad de Artesanos", () => {
             include: { artesano: true }
         });
         artesano2Token = generarToken(usuarioArtesano2.id_usuario);
+
+        productoInicial = await prisma.producto.create({
+            data: {
+                nombre: "Manta de Alpaca Original",
+                descripcion: "Manta tejida a mano artesanal",
+                precio: 45000,
+                id_categoria: categoria.id_categoria,
+                id_artesano: ctx.usuarioArtesano.artesano.id_artesano
+            }
+        });
+    });
+
+    after(async () => {
+        // Criterio 2.4: Desconexión en after
+        await cerrarEntornoPrueba(); // Cierra servidor efímero y ejecuta prisma.$disconnect()
     });
 
     it("Consulta pública de productos GET /api/productos devuelve 200 con paginación", async () => {
@@ -53,11 +76,10 @@ describe("02. Productos y Propiedad de Artesanos", () => {
         const json = await res.json();
         assert.ok(Array.isArray(json.data));
         assert.ok(json.meta);
-        assert.ok(json.meta.page);
+        assert.equal(json.meta.page, 1);
     });
 
     it("Solo ARTESANO puede crear productos; no-artesano recibe HTTP 403", async () => {
-        // Admin intentando crear producto
         const resAdmin = await fetch(`${BASE_URL}/api/productos`, {
             method: "POST",
             headers: {
@@ -73,7 +95,7 @@ describe("02. Productos y Propiedad de Artesanos", () => {
         assert.equal(resAdmin.status, 403);
     });
 
-    it("Artesano crea producto propio; id_artesano proviene del contexto autenticado", async () => {
+    it("Criterio 2.5: Alta correcta de producto verificada directamente en la base de datos (pertenece a la cuenta autenticada)", async () => {
         const res = await fetch(`${BASE_URL}/api/productos`, {
             method: "POST",
             headers: {
@@ -81,11 +103,10 @@ describe("02. Productos y Propiedad de Artesanos", () => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                nombre: "Manta de Alpaca Test",
-                descripcion: "Manta tejida a mano artesanal",
-                precio: 45000,
-                id_categoria: categoria.id_categoria,
-                id_artesano: 999999 // Debe ser ignorado por el backend
+                nombre: "Poncho de Vicuña Imperial",
+                descripcion: "Tejido fino en telar catamarqueño",
+                precio: 290000,
+                id_categoria: categoria.id_categoria
             })
         });
 
@@ -93,7 +114,31 @@ describe("02. Productos y Propiedad de Artesanos", () => {
         const prod = await res.json();
         assert.ok(prod.id_producto);
         assert.equal(prod.id_artesano, ctx.usuarioArtesano.artesano.id_artesano);
-        productoCreadoId = prod.id_producto;
+
+        // Verificación directa en la base de datos PostgreSQL (*_test)
+        const enBase = await prisma.producto.findUnique({
+            where: { id_producto: prod.id_producto }
+        });
+        assert.ok(enBase, "El producto debe estar persistido en la base de datos");
+        assert.equal(enBase.nombre, "Poncho de Vicuña Imperial");
+        assert.equal(enBase.id_artesano, ctx.usuarioArtesano.artesano.id_artesano);
+    });
+
+    it("Criterio 1.6 y 2.3: Alta de producto con campo prohibido artesanoId o id_artesano en el body es rechazada con HTTP 400", async () => {
+        const res = await fetch(`${BASE_URL}/api/productos`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${ctx.artesanoToken}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                nombre: "Poncho Con Campo Extra",
+                precio: 50000,
+                id_categoria: categoria.id_categoria,
+                artesanoId: usuarioArtesano2.artesano.id_artesano
+            })
+        });
+        assert.equal(res.status, 400);
     });
 
     it("Artesano lista sus propios productos en GET /api/productos/mis-productos", async () => {
@@ -104,11 +149,11 @@ describe("02. Productos y Propiedad de Artesanos", () => {
         assert.equal(res.status, 200);
         const lista = await res.json();
         assert.ok(Array.isArray(lista));
-        assert.ok(lista.some(p => p.id_producto === productoCreadoId));
+        assert.ok(lista.some(p => p.id_producto === productoInicial.id_producto));
     });
 
     it("Artesano modifica su propio producto exitosamente", async () => {
-        const res = await fetch(`${BASE_URL}/api/productos/${productoCreadoId}`, {
+        const res = await fetch(`${BASE_URL}/api/productos/${productoInicial.id_producto}`, {
             method: "PUT",
             headers: {
                 Authorization: `Bearer ${ctx.artesanoToken}`,
@@ -126,8 +171,9 @@ describe("02. Productos y Propiedad de Artesanos", () => {
         assert.equal(Number(prod.precio), 48000);
     });
 
-    it("Artesano intentando modificar producto ajeno recibe HTTP 404 'Producto no encontrado'", async () => {
-        const res = await fetch(`${BASE_URL}/api/productos/${productoCreadoId}`, {
+    it("Criterio 2.5: Acceso a un recurso ajeno (PUT y DELETE) devuelve HTTP 404 comprobando en la base que el registro sigue existiendo y no cambió de dueño", async () => {
+        // 1. Intento de modificación por Artesano 2 -> 404
+        const resPut = await fetch(`${BASE_URL}/api/productos/${productoInicial.id_producto}`, {
             method: "PUT",
             headers: {
                 Authorization: `Bearer ${artesano2Token}`,
@@ -139,9 +185,32 @@ describe("02. Productos y Propiedad de Artesanos", () => {
             })
         });
 
-        assert.equal(res.status, 404);
-        const data = await res.json();
-        assert.equal(data.mensaje, "Producto no encontrado");
+        assert.equal(resPut.status, 404);
+        const dataPut = await resPut.json();
+        assert.equal(dataPut.mensaje, "Producto no encontrado");
+
+        // 2. Intento de eliminación por Artesano 2 -> 404
+        const resDel = await fetch(`${BASE_URL}/api/productos/${productoInicial.id_producto}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${artesano2Token}` }
+        });
+
+        assert.equal(resDel.status, 404);
+        const dataDel = await resDel.json();
+        assert.equal(dataDel.mensaje, "Producto no encontrado");
+
+        // 3. Comprobar directamente en la base de datos que el registro sigue existiendo intacto y no cambió de dueño
+        const registroEnBase = await prisma.producto.findUnique({
+            where: { id_producto: productoInicial.id_producto }
+        });
+        assert.ok(registroEnBase, "El producto debe seguir existiendo en la base de datos");
+        assert.equal(registroEnBase.nombre, "Manta de Alpaca Original");
+        assert.equal(Number(registroEnBase.precio), 45000);
+        assert.equal(
+            registroEnBase.id_artesano,
+            ctx.usuarioArtesano.artesano.id_artesano,
+            "El producto NO debe haber cambiado de dueño"
+        );
     });
 
     it("Artesano intentando modificar producto inexistente recibe idéntico HTTP 404", async () => {
@@ -162,27 +231,17 @@ describe("02. Productos y Propiedad de Artesanos", () => {
         assert.equal(data.mensaje, "Producto no encontrado");
     });
 
-    it("Artesano intentando eliminar producto ajeno recibe HTTP 404 'Producto no encontrado'", async () => {
-        const res = await fetch(`${BASE_URL}/api/productos/${productoCreadoId}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${artesano2Token}` }
-        });
-
-        assert.equal(res.status, 404);
-        const data = await res.json();
-        assert.equal(data.mensaje, "Producto no encontrado");
-    });
-
     it("Artesano elimina su propio producto con HTTP 204", async () => {
-        const res = await fetch(`${BASE_URL}/api/productos/${productoCreadoId}`, {
+        const res = await fetch(`${BASE_URL}/api/productos/${productoInicial.id_producto}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${ctx.artesanoToken}` }
         });
 
         assert.equal(res.status, 204);
 
-        // Confirmar eliminación
-        const getRes = await fetch(`${BASE_URL}/api/productos/${productoCreadoId}`);
-        assert.equal(getRes.status, 404);
+        const enBase = await prisma.producto.findUnique({
+            where: { id_producto: productoInicial.id_producto }
+        });
+        assert.equal(enBase, null);
     });
 });

@@ -6,11 +6,11 @@ export const crearAdminSchema = z.object({
     email: z.string().trim().email("El formato del email no es válido"),
     // La contraseña no se recorta con trim()
     password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres")
-});
+}).strict();
 
 export const estadoCuentaSchema = z.object({
     activo: z.boolean({
         required_error: "El campo activo es obligatorio",
         invalid_type_error: "El campo activo debe ser un valor booleano (true o false)"
     })
-});
+}).strict();

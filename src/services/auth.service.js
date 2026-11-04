@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import prisma from "../prisma.js";
 import config from "../config/env.js";
 import { usuarioPublicoDTO } from "../dtos/auth.dto.js";
+import { invalidarCache } from "../utils/cache.js";
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -131,6 +132,8 @@ export const postularArtesano = async (datos) => {
 
         return { usuario, artesano, solicitud };
     });
+
+    invalidarCache("reportes:general", "reportes:artesanos-localidad", "reportes:artesanos-rubro", "reportes:productos-artesano");
 
     return {
         usuario: usuarioPublicoDTO(resultado.usuario),

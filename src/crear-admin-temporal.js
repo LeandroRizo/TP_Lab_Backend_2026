@@ -1,50 +1,14 @@
-
-import bcrypt from "bcrypt";
+// Script administrativo auxiliar sin credenciales embebidas.
+// Delega en las variables de entorno SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD.
+import { ejecutarSeed } from "../prisma/seed.js";
 import prisma from "./prisma.js";
 
 try {
-  const passwordHash = await bcrypt.hash("AdminTemporal123!", 10);
-
-  let rol = await prisma.rol.findFirst({
-    where: {
-      nombre: { equals: "Administrador", mode: "insensitive" }
-    }
-  });
-
-  if (!rol) {
-    rol = await prisma.rol.create({
-      data: {
-        nombre: "Administrador",
-        descripcion: "Administrador temporal para pruebas"
-      }
-    });
-  }
-
-  const admin = await prisma.usuario.upsert({
-    where: { email: "admin.prueba@example.com" },
-    update: {
-      passwordHash,
-      id_rol: rol.id_rol,
-      activo: true
-    },
-    create: {
-      nombre: "Admin Prueba",
-      email: "admin.prueba@example.com",
-      passwordHash,
-      id_rol: rol.id_rol,
-      activo: true
-    },
-    select: {
-      id_usuario: true,
-      email: true,
-      id_rol: true,
-      activo: true
-    }
-  });
-
-  console.log("Administrador de prueba creado:", admin);
+    const resultado = await ejecutarSeed();
+    console.log("Verificación de cuenta administradora completada:", resultado.admin);
 } catch (error) {
-  console.error(error);
+    console.error("Error al verificar cuenta administradora:", error.message);
+    process.exitCode = 1;
 } finally {
-  await prisma.$disconnect();
+    await prisma.$disconnect();
 }

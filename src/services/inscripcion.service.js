@@ -1,4 +1,5 @@
 import prisma from "../prisma.js";
+import { invalidarCache } from "../utils/cache.js";
 
 export const getInscripcions = async (filtros) => {
     const where = {};
@@ -29,13 +30,19 @@ export const getInscripcionById = async (id) => {
 };
 
 export const crearInscripcion = async (datos) => {
-    return await prisma.inscripcion.create({ data: datos });
+    const creada = await prisma.inscripcion.create({ data: datos });
+    invalidarCache("reportes:general", "reportes:stands-ocupacion");
+    return creada;
 };
 
 export const actualizarInscripcion = async (id, datos) => {
-    return await prisma.inscripcion.update({ where: { id_inscripcion: Number(id) }, data: datos });
+    const actualizada = await prisma.inscripcion.update({ where: { id_inscripcion: Number(id) }, data: datos });
+    invalidarCache("reportes:general", "reportes:stands-ocupacion");
+    return actualizada;
 };
 
 export const eliminarInscripcion = async (id) => {
-    return await prisma.inscripcion.delete({ where: { id_inscripcion: Number(id) } });
+    const eliminada = await prisma.inscripcion.delete({ where: { id_inscripcion: Number(id) } });
+    invalidarCache("reportes:general", "reportes:stands-ocupacion");
+    return eliminada;
 };
