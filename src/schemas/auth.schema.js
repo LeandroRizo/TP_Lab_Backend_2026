@@ -5,15 +5,15 @@ export const registroSchema = z.object({
     email: z.string().trim().email("El formato del email no es válido"),
     // ATENCIÓN (Criterio 1.2): La contraseña NO se recorta con trim()
     password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres")
-});
+}).strict();
 
 export const loginSchema = z.object({
     email: z.string().trim().email("El formato del email no es válido"),
     // ATENCIÓN (Criterio 1.2): La contraseña NO se recorta con trim()
     password: z.string().min(1, "La contraseña es obligatoria")
-});
+}).strict();
 
-// Criterio 6: Postulación pública
+// Criterio 6: Postulación pública (no incluye rol, activo ni estado)
 export const postulacionSchema = z.object({
     nombre: z.string().trim().min(1, "El nombre es obligatorio"),
     apellido: z.string().trim().min(1, "El apellido es obligatorio"),
@@ -28,4 +28,4 @@ export const postulacionSchema = z.object({
     id_localidad: z.coerce.number().int().positive("La localidad es obligatoria"),
     id_rubro: z.coerce.number().int().positive("El rubro es obligatorio"),
     observaciones: z.string().trim().optional()
-});
+}).strict();

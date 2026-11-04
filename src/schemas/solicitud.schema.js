@@ -9,12 +9,12 @@ export const resolverSolicitudSchema = z.object({
     ),
     motivo_rechazo: z.string().trim().optional(),
     observaciones: z.string().trim().optional()
-});
+}).strict();
 
 export const asignarStandSchema = z.object({
     id_artesano: z.coerce.number().int().positive("El ID del artesano es obligatorio"),
     id_stand: z.coerce.number().int().positive("El ID del stand es obligatorio").optional()
-});
+}).strict();
 
 export const solicitudQuerySchema = z.object({
     estado: z.string().trim().optional(),

@@ -1,8 +1,11 @@
-import { usuarioSchema } from "../schemas/usuario.schema.js";
+import { usuarioSchema, usuarioActualizarSchema } from "../schemas/usuario.schema.js";
 import { crearUsuarioDTO } from "../dtos/usuario.dto.js";
 
 export const validarUsuario = (req, res, next) => {
-    const resultado = usuarioSchema.safeParse(req.body);
+    const esModificacion = req.method === "PUT" || req.method === "PATCH";
+    const schema = esModificacion ? usuarioActualizarSchema : usuarioSchema;
+
+    const resultado = schema.safeParse(req.body);
     if (!resultado.success) {
         return res.status(400).json({
             mensaje: "Los datos de usuario no son válidos",

@@ -35,28 +35,28 @@ const PORT = config.port;
 
 app.use(express.json());
 
-// Documentación Swagger / OpenAPI 3.0 interactiva
-app.use("/api-docs", docRoutes);
-app.use("/docs", docRoutes);
+// Criterio 1.1 (Nivel 1): Swagger UI se publica en /docs (y /api-docs) antes del manejador 404
+app.use("/docs", /* #swagger.ignore = true */ docRoutes);
+app.use("/api-docs", /* #swagger.ignore = true */ docRoutes);
 
 // Criterio 1.2, 1.4, 1.5, 1.6, 2.2, 2.5, 2.6: Autenticación, registro, login, GET /me y POST /logout
 app.use("/api/auth", authRoutes);
 // Rutas de compatibilidad directa (ej. /api/me, /me, /api/logout, /logout)
-app.use("/api", authRoutes);
-app.use(authRoutes);
+app.use("/api", /* #swagger.ignore = true */ authRoutes);
+app.use(/* #swagger.ignore = true */ authRoutes);
 
 // Criterio 4 & 6: Postulación pública directa
 app.post("/api/postulacion", validarPostulacion, postularse);
-app.post("/postulacion", validarPostulacion, postularse);
+app.post("/postulacion", /* #swagger.ignore = true */ validarPostulacion, postularse);
 
 // Endpoints de entidades del Poncho Digital
 app.use("/api/roles", rolRoutes);
-app.use("/api/usuarios", usuarioRoutes);
+app.use("/api/usuarios", /* #swagger.security = [{ "bearerAuth": [] }] */ usuarioRoutes);
 app.use("/api/artesanos", artesanoRoutes);
 app.use("/api/localidades", localidadRoutes);
 app.use("/api/rubros", rubroRoutes);
 app.use("/api/inscripciones", inscripcionRoutes);
-app.use("/api/solicitudes", solicitudRoutes);
+app.use("/api/solicitudes", /* #swagger.security = [{ "bearerAuth": [] }] */ solicitudRoutes);
 app.use("/api/pabellones", pabellonRoutes);
 app.use("/api/zonas", zonaRoutes);
 app.use("/api/stands", standRoutes);
@@ -64,20 +64,37 @@ app.use("/api/categorias", categoriaRoutes);
 app.use("/api/productos", productoRoutes);
 
 // Reportes administrativos y estadísticas públicas
-app.use("/api/reportes", reporteRoutes);
+app.use("/api/reportes", /* #swagger.security = [{ "bearerAuth": [] }] */ reporteRoutes);
 app.use("/api/estadisticas", estadisticaRoutes);
 
 app.get('/', (req, res) => {
+    /*
+        #swagger.tags = ['Estado']
+        #swagger.summary = 'Comprobar estado de funcionamiento de la API'
+        #swagger.security = []
+        #swagger.responses[200] = { description: 'API activa y operativa' }
+    */
     res.status(200).send(`API Poncho Digital funcionando...`);
+});
+
+// Criterio 1.1 (Nivel 1): Manejador 404 ubicado después de las rutas y de /docs
+app.use((req, res) => {
+    res.status(404).json({
+        mensaje: "Ruta no encontrada"
+    });
 });
 
 // Criterio 1.7 & 8: Manejador de errores centralizado (al final de las rutas)
 app.use(errorHandler);
 
-const servidor = app.listen(PORT, () => {
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
-    // Criterio 2.7: Tarea periódica iniciada al arrancar el servidor para limpiar revocaciones vencidas
-    iniciarLimpiezaRevocaciones();
-});
+// Criterio 2.1 (Nivel 2): app.listen y las tareas periódicas solo fuera de NODE_ENV=test
+if (process.env.NODE_ENV !== "test") {
+    app.listen(PORT, () => {
+        console.log(`Servidor escuchando en http://localhost:${PORT}`);
+        // Criterio 2.7: Tarea periódica iniciada al arrancar el servidor para limpiar revocaciones vencidas
+        iniciarLimpiezaRevocaciones();
+    });
+}
 
+export { app };
 export default app;

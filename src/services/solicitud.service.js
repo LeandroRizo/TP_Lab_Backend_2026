@@ -1,4 +1,17 @@
 import prisma from "../prisma.js";
+import { invalidarCache } from "../utils/cache.js";
+
+// Selección segura de campos públicos de usuario (nunca incluye passwordHash)
+const USUARIO_PUBLICO_SELECT = {
+    id_usuario: true,
+    nombre: true,
+    email: true,
+    activo: true,
+    id_rol: true,
+    created_at: true,
+    updated_at: true,
+    rol: true
+};
 
 // Criterio 4: Listado de solicitudes (Solo ADMIN)
 export const getSolicitudes = async (filtros = {}) => {
@@ -18,14 +31,7 @@ export const getSolicitudes = async (filtros = {}) => {
                 artesano: {
                     include: {
                         usuario: {
-                            select: {
-                                id_usuario: true,
-                                nombre: true,
-                                email: true,
-                                activo: true,
-                                id_rol: true,
-                                rol: true
-                            }
+                            select: USUARIO_PUBLICO_SELECT
                         },
                         localidad: true,
                         rubro: true
@@ -59,7 +65,9 @@ export const getSolicitudById = async (id) => {
         include: {
             artesano: {
                 include: {
-                    usuario: true,
+                    usuario: {
+                        select: USUARIO_PUBLICO_SELECT
+                    },
                     localidad: true,
                     rubro: true
                 }
@@ -77,7 +85,11 @@ export const resolverSolicitud = async (id_solicitud, { estado, motivo_rechazo, 
         where: { id_solicitud: Number(id_solicitud) },
         include: {
             artesano: {
-                include: { usuario: true }
+                include: {
+                    usuario: {
+                        select: USUARIO_PUBLICO_SELECT
+                    }
+                }
             }
         }
     });
@@ -107,7 +119,27 @@ export const resolverSolicitud = async (id_solicitud, { estado, motivo_rechazo, 
 
     // Transacción atómica
     const solicitudActualizada = await prisma.$transaction(async (tx) => {
-        // Actualizar estado de la solicitud
+        // Criterio 6: Al aprobar, la cuenta queda habilitada como ARTESANO en la misma transacción
+        if (esAprobada) {
+            const rolArtesano = await tx.rol.findFirst({
+                where: { nombre: { equals: "Artesano", mode: "insensitive" } }
+            });
+            if (!rolArtesano) {
+                const error = new Error("El rol Artesano no se encuentra configurado en el sistema");
+                error.statusCode = 500;
+                throw error;
+            }
+
+            await tx.usuario.update({
+                where: { id_usuario: solicitud.artesano.id_usuario },
+                data: {
+                    id_rol: rolArtesano.id_rol
+                }
+            });
+        }
+        // Rechazar o pedir modificaciones NO habilita (el rol no cambia)
+
+        // Actualizar estado de la solicitud y devolver usuario sin passwordHash
         const actualizada = await tx.solicitud.update({
             where: { id_solicitud: Number(id_solicitud) },
             data: {
@@ -119,37 +151,18 @@ export const resolverSolicitud = async (id_solicitud, { estado, motivo_rechazo, 
                 artesano: {
                     include: {
                         usuario: {
-                            include: { rol: true }
-                        }
+                            select: USUARIO_PUBLICO_SELECT
+                        },
+                        localidad: true,
+                        rubro: true
                     }
                 }
             }
         });
 
-        // Criterio 6: Al aprobar, la cuenta queda habilitada como ARTESANO en la misma transacción
-        if (esAprobada) {
-            let rolArtesano = await tx.rol.findFirst({
-                where: { nombre: { equals: "Artesano", mode: "insensitive" } }
-            });
-            if (!rolArtesano) {
-                const error = new Error("El rol Artesano no se encuentra configurado en el sistema");
-                error.statusCode = 500;
-                throw error;
-            }
-
-            if (rolArtesano) {
-                await tx.usuario.update({
-                    where: { id_usuario: solicitud.artesano.id_usuario },
-                    data: {
-                        id_rol: rolArtesano.id_rol
-                    }
-                });
-            }
-        }
-        // Rechazar o pedir modificaciones NO habilita (el rol no cambia)
-
         return actualizada;
     });
 
+    invalidarCache("reportes:general", "reportes:artesanos-localidad", "reportes:artesanos-rubro", "reportes:productos-artesano");
     return solicitudActualizada;
 };

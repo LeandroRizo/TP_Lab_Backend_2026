@@ -1,7 +1,18 @@
-import { describe, it, before } from "node:test";
+import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
-import prisma from "../src/prisma.js";
-import { BASE_URL, generarToken, obtenerUsuariosPrueba } from "./testHelper.js";
+
+// Criterio 2.4: Aserciones de NODE_ENV y del nombre de la base antes de importar la app
+assert.equal(process.env.NODE_ENV, "test", "NODE_ENV debe ser 'test'");
+assert.match(process.env.DATABASE_URL || "", /_test(\?|$)/i, "DATABASE_URL debe ser una base *_test");
+
+const {
+    BASE_URL,
+    prisma,
+    generarToken,
+    obtenerUsuariosPrueba,
+    limpiarBaseDeDatos,
+    cerrarEntornoPrueba
+} = await import("./testHelper.js");
 
 describe("03. Postulaciones, Aprobación y Estados", () => {
     let ctx;
@@ -12,10 +23,24 @@ describe("03. Postulaciones, Aprobación y Estados", () => {
     let tokenPostulanteAprobado;
 
     before(async () => {
+        await limpiarBaseDeDatos();
         ctx = await obtenerUsuariosPrueba();
         localidad = await prisma.localidad.findFirst();
+        if (!localidad) {
+            localidad = await prisma.localidad.create({ data: { nombre: "San Fernando del Valle" } });
+        }
         rubro = await prisma.rubro.findFirst();
+        if (!rubro) {
+            rubro = await prisma.rubro.create({ data: { nombre: "Textil", descripcion: "Tejidos" } });
+        }
         categoria = await prisma.categoria.findFirst();
+        if (!categoria) {
+            categoria = await prisma.categoria.create({ data: { nombre: "Ponchos", descripcion: "Prendas tejidas" } });
+        }
+    });
+
+    after(async () => {
+        await cerrarEntornoPrueba(); // Cierra servidor efímero y ejecuta prisma.$disconnect()
     });
 
     it("1. Postulación pública crea cuenta con rol Postulante y solicitud en estado PENDIENTE", async () => {
@@ -84,13 +109,11 @@ describe("03. Postulaciones, Aprobación y Estados", () => {
         });
         assert.equal(resAprobar.status, 200);
 
-        // Verificar en base de datos que la solicitud pasó a APROBADA
         const solDb = await prisma.solicitud.findUnique({
             where: { id_solicitud: postulacionAprobada.solicitud.id_solicitud }
         });
         assert.equal(solDb.estado, "APROBADA");
 
-        // Verificar en base de datos que el usuario ahora tiene rol Artesano
         const uActualizado = await prisma.usuario.findUnique({
             where: { id_usuario: postulacionAprobada.usuario.id_usuario },
             include: { rol: true }
@@ -115,9 +138,6 @@ describe("03. Postulaciones, Aprobación y Estados", () => {
         const prod = await resProdHabilitado.json();
         assert.ok(prod.id_producto);
         assert.equal(prod.id_artesano, postulacionAprobada.artesano.id_artesano);
-
-        // Limpieza del producto de prueba
-        await prisma.producto.delete({ where: { id_producto: prod.id_producto } });
     });
 
     it("5. Solicitud ya resuelta NO puede volver a aprobarse ni resolverse (HTTP 409)", async () => {
@@ -153,7 +173,6 @@ describe("03. Postulaciones, Aprobación y Estados", () => {
         });
         const data = await res.json();
 
-        // Intento con estado inválido para forzar error en la resolución
         const resInvalido = await fetch(`${BASE_URL}/api/solicitudes/${data.solicitud.id_solicitud}/resolver`, {
             method: "PUT",
             headers: {
@@ -164,13 +183,11 @@ describe("03. Postulaciones, Aprobación y Estados", () => {
         });
         assert.equal(resInvalido.status, 400);
 
-        // Comprobar que en la BD la solicitud permanece intacta en PENDIENTE
         const solCheck = await prisma.solicitud.findUnique({
             where: { id_solicitud: data.solicitud.id_solicitud }
         });
         assert.equal(solCheck.estado, "PENDIENTE");
 
-        // Comprobar que el usuario sigue con rol Postulante
         const uCheck = await prisma.usuario.findUnique({
             where: { id_usuario: data.usuario.id_usuario },
             include: { rol: true }
@@ -282,5 +299,67 @@ describe("03. Postulaciones, Aprobación y Estados", () => {
             })
         });
         assert.equal(resInvalido.status, 400);
+    });
+
+    it("10. Auditoria 6.2: GET /api/solicitudes, GET /api/solicitudes/:id y PUT /api/solicitudes/:id/resolver NUNCA exponen passwordHash", async () => {
+        const timestamp = Date.now();
+        const resPost = await fetch(`${BASE_URL}/api/postulacion`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                nombre: "SinHash",
+                apellido: "Test",
+                email: `sinhash_${timestamp}@postulante.test`,
+                password: "SinHashPassword2026!",
+                dni: `DNI_SINHASH_${timestamp}`,
+                id_localidad: localidad.id_localidad,
+                id_rubro: rubro.id_rubro
+            })
+        });
+        assert.equal(resPost.status, 201);
+        const postulacion = await resPost.json();
+        const idSolicitud = postulacion.solicitud.id_solicitud;
+
+        // 1. GET /api/solicitudes
+        const resList = await fetch(`${BASE_URL}/api/solicitudes`, {
+            headers: { Authorization: `Bearer ${ctx.adminToken}` }
+        });
+        assert.equal(resList.status, 200);
+        const listData = await resList.json();
+        const rawList = JSON.stringify(listData);
+        assert.equal(rawList.includes("passwordHash"), false, "GET /api/solicitudes no debe incluir passwordHash");
+        for (const sol of listData.data) {
+            if (sol.artesano?.usuario) {
+                assert.equal(sol.artesano.usuario.passwordHash, undefined);
+            }
+        }
+
+        // 2. GET /api/solicitudes/:id
+        const resDetalle = await fetch(`${BASE_URL}/api/solicitudes/${idSolicitud}`, {
+            headers: { Authorization: `Bearer ${ctx.adminToken}` }
+        });
+        assert.equal(resDetalle.status, 200);
+        const detalleData = await resDetalle.json();
+        assert.ok(detalleData.artesano?.usuario);
+        assert.equal(detalleData.artesano.usuario.passwordHash, undefined);
+        assert.equal(JSON.stringify(detalleData).includes("passwordHash"), false);
+
+        // 3. PUT /api/solicitudes/:id/resolver
+        const resResolver = await fetch(`${BASE_URL}/api/solicitudes/${idSolicitud}/resolver`, {
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${ctx.adminToken}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                estado: "APROBADA",
+                observaciones: "Verificación de omisión de credenciales"
+            })
+        });
+        assert.equal(resResolver.status, 200);
+        const resueltaData = await resResolver.json();
+        assert.ok(resueltaData.artesano?.usuario);
+        assert.equal(resueltaData.artesano.usuario.passwordHash, undefined);
+        assert.equal(JSON.stringify(resueltaData).includes("passwordHash"), false);
     });
 });

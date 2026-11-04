@@ -8,6 +8,15 @@ import {
 } from "../services/rol.service.js";
 
 export const obtenerRols = async (req, res, next) => {
+    /*
+        #swagger.tags = ['Roles']
+        #swagger.summary = 'Listar roles del sistema (Público)'
+        #swagger.security = []
+        #swagger.parameters['nombre'] = { in: 'query', description: 'Filtrar por nombre', required: false, '@schema': { type: 'string' } }
+        #swagger.parameters['page'] = { in: 'query', description: 'Página', required: false, '@schema': { type: 'integer', minimum: 1, default: 1 } }
+        #swagger.parameters['limit'] = { in: 'query', description: 'Límite por página', required: false, '@schema': { type: 'integer', minimum: 1, maximum: 100, default: 10 } }
+        #swagger.responses[200] = { description: 'Listado de roles' }
+    */
     try {
         const filtros = rolQueryDTO(req.queryValidada);
         const data = await getRols(filtros);
@@ -18,6 +27,19 @@ export const obtenerRols = async (req, res, next) => {
 };
 
 export const crear = async (req, res, next) => {
+    /*
+        #swagger.tags = ['Roles']
+        #swagger.summary = 'Crear un rol (Solo Administrador)'
+        #swagger.security = [{ "bearerAuth": [] }]
+        #swagger.requestBody = {
+            required: true,
+            content: { "application/json": { schema: { $ref: "#/components/schemas/RolEntrada" } } }
+        }
+        #swagger.responses[201] = { description: 'Rol creado exitosamente' }
+        #swagger.responses[400] = { description: 'Datos inválidos', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+        #swagger.responses[401] = { description: 'No autenticado', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+        #swagger.responses[403] = { description: 'Requiere rol Administrador', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+    */
     try {
         const nuevo = await crearRol(req.body);
         res.status(201).json(nuevo);
@@ -27,6 +49,14 @@ export const crear = async (req, res, next) => {
 };
 
 export const obtenerPorId = async (req, res, next) => {
+    /*
+        #swagger.tags = ['Roles']
+        #swagger.summary = 'Obtener un rol por su ID (Público)'
+        #swagger.security = []
+        #swagger.parameters['id'] = { in: 'path', description: 'ID del rol', required: true, '@schema': { type: 'integer', minimum: 1 } }
+        #swagger.responses[200] = { description: 'Rol encontrado' }
+        #swagger.responses[404] = { description: 'Rol no encontrado', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+    */
     try {
         const item = await getRolById(req.params.id);
         if (!item) return res.status(404).json({ mensaje: "Rol no encontrado" });
@@ -37,6 +67,21 @@ export const obtenerPorId = async (req, res, next) => {
 };
 
 export const actualizar = async (req, res, next) => {
+    /*
+        #swagger.tags = ['Roles']
+        #swagger.summary = 'Actualizar un rol por su ID (Solo Administrador)'
+        #swagger.security = [{ "bearerAuth": [] }]
+        #swagger.parameters['id'] = { in: 'path', description: 'ID del rol', required: true, '@schema': { type: 'integer', minimum: 1 } }
+        #swagger.requestBody = {
+            required: true,
+            content: { "application/json": { schema: { $ref: "#/components/schemas/RolEntrada" } } }
+        }
+        #swagger.responses[200] = { description: 'Rol actualizado' }
+        #swagger.responses[400] = { description: 'Datos inválidos', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+        #swagger.responses[401] = { description: 'No autenticado', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+        #swagger.responses[403] = { description: 'Requiere rol Administrador', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+        #swagger.responses[404] = { description: 'Rol no encontrado', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+    */
     try {
         const item = await actualizarRol(req.params.id, req.body);
         res.status(200).json(item);
@@ -46,6 +91,16 @@ export const actualizar = async (req, res, next) => {
 };
 
 export const eliminar = async (req, res, next) => {
+    /*
+        #swagger.tags = ['Roles']
+        #swagger.summary = 'Eliminar un rol por su ID (Solo Administrador)'
+        #swagger.security = [{ "bearerAuth": [] }]
+        #swagger.parameters['id'] = { in: 'path', description: 'ID del rol', required: true, '@schema': { type: 'integer', minimum: 1 } }
+        #swagger.responses[204] = { description: 'Rol eliminado exitosamente' }
+        #swagger.responses[401] = { description: 'No autenticado', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+        #swagger.responses[403] = { description: 'Requiere rol Administrador', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+        #swagger.responses[404] = { description: 'Rol no encontrado', content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorApi" } } } }
+    */
     try {
         await eliminarRol(req.params.id);
         res.status(204).send();

@@ -2,14 +2,18 @@
   "info": {
     "name": "Poncho Digital - API Backend 2026",
     "_postman_id": "c1f7a0b5-4b42-4f33-8a3b-9c71a3983d99",
-    "description": "Colección completa de pruebas para el backend Poncho Digital (TP_Lab_Backend_2026). Incluye flujos de autenticación, postulaciones, gestión de cuentas, productos propios, stands con ubicación, reportes y entidades auxiliares.",
+    "description": "Colección oficial completa para el backend Poncho Digital (TP_Lab_Backend_2026 - UNCa). Configurá las variables de colección SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, SEED_ARTESANO_EMAIL y SEED_ARTESANO_PASSWORD con los mismos valores definidos en tu archivo .env. Los endpoints de Login guardan automáticamente los tokens JWT en las variables adminToken y artesanoToken.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "adminToken", "value": "" },
-    { "key": "artesanoToken", "value": "" },
-    { "key": "postulanteToken", "value": "" }
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "SEED_ADMIN_EMAIL", "value": "admin@ponchodigital.gob.ar", "type": "string" },
+    { "key": "SEED_ADMIN_PASSWORD", "value": "<CONFIGURAR_SEED_ADMIN_PASSWORD>", "type": "string" },
+    { "key": "SEED_ARTESANO_EMAIL", "value": "artesano.belen@ponchodigital.gob.ar", "type": "string" },
+    { "key": "SEED_ARTESANO_PASSWORD", "value": "<CONFIGURAR_SEED_ARTESANO_PASSWORD>", "type": "string" },
+    { "key": "adminToken", "value": "", "type": "string" },
+    { "key": "artesanoToken", "value": "", "type": "string" },
+    { "key": "postulanteToken", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -22,25 +26,69 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Usuario Demo\",\n  \"email\": \"demo_usuario@test.com\",\n  \"password\": \"ClaveSegura123!\"\n}"
+              "raw": "{\n  \"nombre\": \"Usuario Demo\",\n  \"email\": \"demo_usuario@ponchodigital.gob.ar\",\n  \"password\": \"<INGRESAR_PASSWORD_DEMO>\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
           }
         },
         {
-          "name": "POST /api/auth/login (Login)",
+          "name": "POST /api/auth/login (Login Administrador - Guarda adminToken)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData && jsonData.token) {",
+                  "        pm.collectionVariables.set('adminToken', jsonData.token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@poncho.gob.ar\",\n  \"password\": \"AdminPoncho2026!\"\n}"
+              "raw": "{\n  \"email\": \"{{SEED_ADMIN_EMAIL}}\",\n  \"password\": \"{{SEED_ADMIN_PASSWORD}}\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
           }
         },
         {
-          "name": "GET /api/auth/me (Perfil de usuario)",
+          "name": "POST /api/auth/login (Login Artesano - Guarda artesanoToken)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData && jsonData.token) {",
+                  "        pm.collectionVariables.set('artesanoToken', jsonData.token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{SEED_ARTESANO_EMAIL}}\",\n  \"password\": \"{{SEED_ARTESANO_PASSWORD}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "GET /api/auth/me (Perfil de cuenta autenticada)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
@@ -48,7 +96,7 @@
           }
         },
         {
-          "name": "POST /api/auth/logout (Revocación selectiva)",
+          "name": "POST /api/auth/logout (Revocación selectiva de JWT)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
@@ -61,13 +109,13 @@
       "name": "2. Postulaciones y Resolución",
       "item": [
         {
-          "name": "POST /api/postulacion (Postulación pública artesano)",
+          "name": "POST /api/postulacion (Postulación pública de artesano)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Rosa\",\n  \"apellido\": \"Gomez\",\n  \"email\": \"rosa.gomez@artesanos.com\",\n  \"password\": \"RosaArtesana2026!\",\n  \"dni\": \"35123999\",\n  \"telefono\": \"3834112233\",\n  \"direccion\": \"San Martin 450\",\n  \"descripcion\": \"Tejedora tradicional de vicuña y llama\",\n  \"instagram\": \"@rosagomez.tejidos\",\n  \"id_localidad\": 1,\n  \"id_rubro\": 1,\n  \"observaciones\": \"Primera participación en la fiesta\"\n}"
+              "raw": "{\n  \"nombre\": \"Rosa\",\n  \"apellido\": \"Gómez\",\n  \"email\": \"rosa.gomez@ponchodigital.gob.ar\",\n  \"password\": \"<INGRESAR_PASSWORD_POSTULANTE>\",\n  \"dni\": \"35123999\",\n  \"telefono\": \"3834112233\",\n  \"direccion\": \"San Martín 450\",\n  \"descripcion\": \"Tejedora tradicional de vicuña y llama\",\n  \"instagram\": \"@rosagomez.tejidos\",\n  \"id_localidad\": 1,\n  \"id_rubro\": 1,\n  \"observaciones\": \"Primera participación en la Fiesta del Poncho\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/postulacion", "host": ["{{baseUrl}}"], "path": ["api", "postulacion"] }
           }
@@ -77,11 +125,28 @@
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/solicitudes?estado=PENDIENTE", "host": ["{{baseUrl}}"], "path": ["api", "solicitudes"], "query": [{ "key": "estado", "value": "PENDIENTE" }] }
+            "url": {
+              "raw": "{{baseUrl}}/api/solicitudes?estado=PENDIENTE&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "solicitudes"],
+              "query": [
+                { "key": "estado", "value": "PENDIENTE" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
           }
         },
         {
-          "name": "PUT /api/solicitudes/:id/resolver (Aprobar - Habilita ARTESANO)",
+          "name": "GET /api/solicitudes/:id (Detalle de solicitud - Solo ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/solicitudes/1", "host": ["{{baseUrl}}"], "path": ["api", "solicitudes", "1"] }
+          }
+        },
+        {
+          "name": "PUT /api/solicitudes/:id/resolver (Aprobar - Habilita rol Artesano)",
           "request": {
             "method": "PUT",
             "header": [
@@ -92,7 +157,22 @@
               "mode": "raw",
               "raw": "{\n  \"estado\": \"APROBADA\",\n  \"observaciones\": \"Cumple con todos los requisitos de calidad y documentación\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/solicitudes/1/resolver", "host": ["{{baseUrl}}"], "path": ["api", "solicitudes", "1", "resolver"] }
+            "url": { "raw": "{{baseUrl}}/api/solicitudes/2/resolver", "host": ["{{baseUrl}}"], "path": ["api", "solicitudes", "2", "resolver"] }
+          }
+        },
+        {
+          "name": "PUT /api/solicitudes/:id/resolver (Solicitar modificación - No habilita)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"MODIFICACION\",\n  \"observaciones\": \"Adjuntar fotografías adicionales del proceso en telar\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/solicitudes/2/resolver", "host": ["{{baseUrl}}"], "path": ["api", "solicitudes", "2", "resolver"] }
           }
         },
         {
@@ -116,7 +196,15 @@
       "name": "3. Gestión de Cuentas (Solo ADMIN)",
       "item": [
         {
-          "name": "POST /api/usuarios/administrador (Crear administrador)",
+          "name": "GET /api/usuarios (Listar usuarios paginados)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/usuarios?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "usuarios"] }
+          }
+        },
+        {
+          "name": "POST /api/usuarios/administrador (Crear cuenta Administrador)",
           "request": {
             "method": "POST",
             "header": [
@@ -125,13 +213,13 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Admin Coordinador\",\n  \"email\": \"coordinador@poncho.gob.ar\",\n  \"password\": \"CoordPoncho2026!\"\n}"
+              "raw": "{\n  \"nombre\": \"Admin Coordinador\",\n  \"email\": \"coordinador@ponchodigital.gob.ar\",\n  \"password\": \"<INGRESAR_PASSWORD_NUEVO_ADMIN>\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/usuarios/administrador", "host": ["{{baseUrl}}"], "path": ["api", "usuarios", "administrador"] }
           }
         },
         {
-          "name": "PATCH /api/usuarios/:id/estado (Desactivar cuenta)",
+          "name": "PATCH /api/usuarios/:id/estado (Activar o desactivar cuenta)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -142,23 +230,69 @@
               "mode": "raw",
               "raw": "{\n  \"activo\": false\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/usuarios/ID_USUARIO/estado", "host": ["{{baseUrl}}"], "path": ["api", "usuarios", "ID_USUARIO", "estado"] }
+            "url": { "raw": "{{baseUrl}}/api/usuarios/REEMPLAZAR_UUID_USUARIO/estado", "host": ["{{baseUrl}}"], "path": ["api", "usuarios", "REEMPLAZAR_UUID_USUARIO", "estado"] }
           }
         }
       ]
     },
     {
-      "name": "4. Productos y Propiedad",
+      "name": "4. Artesanos (Catálogo Público y Gestión Admin)",
       "item": [
         {
-          "name": "GET /api/productos (Catálogo público)",
+          "name": "GET /api/artesanos (Catálogo público con filtros y paginación)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/productos?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "productos"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/artesanos?page=1&limit=10&sortBy=nombre&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "artesanos"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "sortBy", "value": "nombre" },
+                { "key": "order", "value": "asc" }
+              ]
+            }
           }
         },
         {
-          "name": "GET /api/productos/mis-productos (Mis productos - Solo ARTESANO)",
+          "name": "GET /api/artesanos/:id (Detalle público de artesano)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/artesanos/1", "host": ["{{baseUrl}}"], "path": ["api", "artesanos", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Productos y Propiedad",
+      "item": [
+        {
+          "name": "GET /api/productos (Catálogo público con filtros y paginación)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/productos?page=1&limit=10&sortBy=nombre&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "productos"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "sortBy", "value": "nombre" },
+                { "key": "order", "value": "asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/productos/:id (Detalle público de producto)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/productos/1", "host": ["{{baseUrl}}"], "path": ["api", "productos", "1"] }
+          }
+        },
+        {
+          "name": "GET /api/productos/mis-productos (Mis productos propios - Solo ARTESANO)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{artesanoToken}}" }],
@@ -166,7 +300,7 @@
           }
         },
         {
-          "name": "POST /api/productos (Crear producto - Solo ARTESANO)",
+          "name": "POST /api/productos (Publicar producto propio - Solo ARTESANO)",
           "request": {
             "method": "POST",
             "header": [
@@ -181,7 +315,7 @@
           }
         },
         {
-          "name": "PUT /api/productos/:id (Modificar producto propio)",
+          "name": "PUT /api/productos/:id (Modificar producto propio - Solo ARTESANO)",
           "request": {
             "method": "PUT",
             "header": [
@@ -196,7 +330,7 @@
           }
         },
         {
-          "name": "DELETE /api/productos/:id (Eliminar producto propio)",
+          "name": "DELETE /api/productos/:id (Eliminar producto propio - Solo ARTESANO)",
           "request": {
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{artesanoToken}}" }],
@@ -206,20 +340,36 @@
       ]
     },
     {
-      "name": "5. Stands, Ubicaciones y Asignación",
+      "name": "6. Stands, Ubicaciones y Asignación",
       "item": [
         {
-          "name": "GET /api/stands (Filtros por pabellón, sector y estado)",
+          "name": "GET /api/stands (Consultar stands por pabellón, sector y estado)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/stands?estado=DISPONIBLE&page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "stands"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/stands?estado=DISPONIBLE&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stands"],
+              "query": [
+                { "key": "estado", "value": "DISPONIBLE" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
           }
         },
         {
-          "name": "GET /api/stands/ubicacion (Mapa de stands con coordenadas JSON)",
+          "name": "GET /api/stands/ubicacion (Listado de stands con coordenadas JSON)",
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/api/stands/ubicacion", "host": ["{{baseUrl}}"], "path": ["api", "stands", "ubicacion"] }
+          }
+        },
+        {
+          "name": "GET /api/stands/:id/ubicacion (Ubicación detallada de stand específico)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/stands/1/ubicacion", "host": ["{{baseUrl}}"], "path": ["api", "stands", "1", "ubicacion"] }
           }
         },
         {
@@ -240,7 +390,7 @@
       ]
     },
     {
-      "name": "6. Reportes y Tendencias",
+      "name": "7. Reportes, Caché y Tendencias",
       "item": [
         {
           "name": "GET /api/reportes (Reporte general consolidado - Solo ADMIN)",
@@ -251,7 +401,23 @@
           }
         },
         {
-          "name": "GET /api/reportes/stands-ocupacion (Ocupación de stands - Solo ADMIN)",
+          "name": "GET /api/reportes/artesanos-por-localidad (Solo ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reportes/artesanos-por-localidad", "host": ["{{baseUrl}}"], "path": ["api", "reportes", "artesanos-por-localidad"] }
+          }
+        },
+        {
+          "name": "GET /api/reportes/artesanos-por-rubro (Solo ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reportes/artesanos-por-rubro", "host": ["{{baseUrl}}"], "path": ["api", "reportes", "artesanos-por-rubro"] }
+          }
+        },
+        {
+          "name": "GET /api/reportes/stands-ocupacion (Solo ADMIN)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
@@ -259,7 +425,15 @@
           }
         },
         {
-          "name": "GET /api/reportes/tendencias-busqueda (Tendencias de búsqueda - Solo ADMIN)",
+          "name": "GET /api/reportes/productos-por-artesano (Solo ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reportes/productos-por-artesano", "host": ["{{baseUrl}}"], "path": ["api", "reportes", "productos-por-artesano"] }
+          }
+        },
+        {
+          "name": "GET /api/reportes/tendencias-busqueda (Solo ADMIN)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
@@ -267,10 +441,50 @@
           }
         },
         {
-          "name": "GET /api/estadisticas/tendencias (Estadísticas públicas de búsqueda)",
+          "name": "GET /api/estadisticas/tendencias (Tendencias públicas de búsqueda)",
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/api/estadisticas/tendencias", "host": ["{{baseUrl}}"], "path": ["api", "estadisticas", "tendencias"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Catálogos Auxiliares",
+      "item": [
+        {
+          "name": "GET /api/localidades",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/localidades", "host": ["{{baseUrl}}"], "path": ["api", "localidades"] }
+          }
+        },
+        {
+          "name": "GET /api/rubros",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/rubros", "host": ["{{baseUrl}}"], "path": ["api", "rubros"] }
+          }
+        },
+        {
+          "name": "GET /api/categorias",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/categorias", "host": ["{{baseUrl}}"], "path": ["api", "categorias"] }
+          }
+        },
+        {
+          "name": "GET /api/pabellones",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/pabellones", "host": ["{{baseUrl}}"], "path": ["api", "pabellones"] }
+          }
+        },
+        {
+          "name": "GET /api/zonas",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/zonas", "host": ["{{baseUrl}}"], "path": ["api", "zonas"] }
           }
         }
       ]

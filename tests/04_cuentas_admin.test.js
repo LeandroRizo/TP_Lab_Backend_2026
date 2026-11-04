@@ -1,13 +1,25 @@
-import { describe, it, before } from "node:test";
+import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
-import prisma from "../src/prisma.js";
-import { BASE_URL, generarToken, obtenerUsuariosPrueba } from "./testHelper.js";
+
+// Criterio 2.4: Aserciones de NODE_ENV y del nombre de la base antes de importar la app
+assert.equal(process.env.NODE_ENV, "test", "NODE_ENV debe ser 'test'");
+assert.match(process.env.DATABASE_URL || "", /_test(\?|$)/i, "DATABASE_URL debe ser una base *_test");
+
+const {
+    BASE_URL,
+    prisma,
+    generarToken,
+    obtenerUsuariosPrueba,
+    limpiarBaseDeDatos,
+    cerrarEntornoPrueba
+} = await import("./testHelper.js");
 
 describe("04. Gestión de Cuentas y Protección de Administradores", () => {
     let ctx;
     let cuentaPrueba;
 
     before(async () => {
+        await limpiarBaseDeDatos();
         ctx = await obtenerUsuariosPrueba();
 
         cuentaPrueba = await prisma.usuario.create({
@@ -19,6 +31,10 @@ describe("04. Gestión de Cuentas y Protección de Administradores", () => {
                 activo: true
             }
         });
+    });
+
+    after(async () => {
+        await cerrarEntornoPrueba(); // Cierra servidor efímero y ejecuta prisma.$disconnect()
     });
 
     it("Solo ADMINISTRADOR puede crear administradores (HTTP 201)", async () => {
@@ -41,7 +57,6 @@ describe("04. Gestión de Cuentas y Protección de Administradores", () => {
         assert.ok(data.id_usuario);
         assert.equal(data.rol.nombre.toLowerCase(), "administrador");
 
-        // Limpiar admin creado
         await prisma.usuario.delete({ where: { id_usuario: data.id_usuario } });
     });
 
@@ -101,7 +116,7 @@ describe("04. Gestión de Cuentas y Protección de Administradores", () => {
         assert.equal(res.status, 400);
     });
 
-    it("Reactivar cuenta devuelve activo a true", async () => {
+    it("Reactivar cuenta devuelve activo a true y vuelve a operar", async () => {
         const res = await fetch(`${BASE_URL}/api/usuarios/${cuentaPrueba.id_usuario}/estado`, {
             method: "PATCH",
             headers: {
@@ -115,27 +130,20 @@ describe("04. Gestión de Cuentas y Protección de Administradores", () => {
         const u = await res.json();
         assert.equal(u.activo, true);
 
-        // Limpieza
-        await prisma.usuario.delete({ where: { id_usuario: cuentaPrueba.id_usuario } });
+        const tokenReactivado = generarToken(cuentaPrueba.id_usuario);
+        const resMe = await fetch(`${BASE_URL}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${tokenReactivado}` }
+        });
+        assert.equal(resMe.status, 200);
     });
 
     it("Impedir desactivar al último administrador activo devuelve HTTP 409", async () => {
-        // Asegurar que solo haya 1 admin activo
         const adminsActivos = await prisma.usuario.findMany({
             where: {
                 rol: { nombre: { equals: "Administrador", mode: "insensitive" } },
                 activo: true
             }
         });
-
-        // Desactivar temporalmente los demás administradores si hubiera más de 1
-        const adminsSecundarios = adminsActivos.slice(1);
-        for (const a of adminsSecundarios) {
-            await prisma.usuario.update({
-                where: { id_usuario: a.id_usuario },
-                data: { activo: false }
-            });
-        }
 
         const unicoAdmin = adminsActivos[0];
         const res = await fetch(`${BASE_URL}/api/usuarios/${unicoAdmin.id_usuario}/estado`, {
@@ -150,13 +158,5 @@ describe("04. Gestión de Cuentas y Protección de Administradores", () => {
         assert.equal(res.status, 409);
         const json = await res.json();
         assert.equal(json.mensaje, "No se puede desactivar al último administrador activo");
-
-        // Restaurar estado de los administradores secundarios
-        for (const a of adminsSecundarios) {
-            await prisma.usuario.update({
-                where: { id_usuario: a.id_usuario },
-                data: { activo: true }
-            });
-        }
     });
 });

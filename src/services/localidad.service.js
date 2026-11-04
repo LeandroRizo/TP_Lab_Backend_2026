@@ -1,4 +1,5 @@
 import prisma from "../prisma.js";
+import { invalidarCache } from "../utils/cache.js";
 
 export const getLocalidads = async (filtros) => {
     const where = {};
@@ -29,13 +30,19 @@ export const getLocalidadById = async (id) => {
 };
 
 export const crearLocalidad = async (datos) => {
-    return await prisma.localidad.create({ data: datos });
+    const creada = await prisma.localidad.create({ data: datos });
+    invalidarCache("reportes:general", "reportes:artesanos-localidad");
+    return creada;
 };
 
 export const actualizarLocalidad = async (id, datos) => {
-    return await prisma.localidad.update({ where: { id_localidad: Number(id) }, data: datos });
+    const actualizada = await prisma.localidad.update({ where: { id_localidad: Number(id) }, data: datos });
+    invalidarCache("reportes:general", "reportes:artesanos-localidad");
+    return actualizada;
 };
 
 export const eliminarLocalidad = async (id) => {
-    return await prisma.localidad.delete({ where: { id_localidad: Number(id) } });
+    const eliminada = await prisma.localidad.delete({ where: { id_localidad: Number(id) } });
+    invalidarCache("reportes:general", "reportes:artesanos-localidad");
+    return eliminada;
 };

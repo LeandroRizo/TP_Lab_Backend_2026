@@ -1,18 +1,32 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
+import { createRequire } from "module";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
+
+// Resolver el directorio local de swagger-ui-dist instalado en node_modules (sin depender de CDN externo)
+const swaggerUiDistPath = path.dirname(require.resolve("swagger-ui-dist/package.json"));
 
 const router = express.Router();
-const swaggerJsonPath = path.join(__dirname, "../docs/swagger.json");
+const rootSwaggerPath = path.join(__dirname, "../../swagger-output.json");
+const fallbackSwaggerPath = path.join(__dirname, "../docs/swagger.json");
+
+const cargarSpecSwagger = () => {
+    if (fs.existsSync(rootSwaggerPath)) {
+        return JSON.parse(fs.readFileSync(rootSwaggerPath, "utf8"));
+    }
+    return JSON.parse(fs.readFileSync(fallbackSwaggerPath, "utf8"));
+};
 
 // Endpoint que expone la especificación OpenAPI 3.0 en formato JSON
-router.get("/swagger.json", (req, res) => {
+router.get(["/swagger.json", "/swagger-output.json"], (req, res) => {
+    /* #swagger.ignore = true */
     try {
-        const spec = JSON.parse(fs.readFileSync(swaggerJsonPath, "utf8"));
+        const spec = cargarSpecSwagger();
         res.setHeader("Content-Type", "application/json");
         res.status(200).json(spec);
     } catch (error) {
@@ -20,15 +34,16 @@ router.get("/swagger.json", (req, res) => {
     }
 });
 
-// Interfaz interactiva Swagger UI servida de forma directa y autónoma
+// Interfaz interactiva Swagger UI servida en /docs y /api-docs usando recursos locales sin CDN externo
 router.get(["/", "/index.html"], (req, res) => {
+    /* #swagger.ignore = true */
     const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Poncho Digital API - Swagger UI</title>
-    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
-    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5/favicon-32x32.png" />
+    <link rel="stylesheet" href="/docs/swagger-ui.css" />
+    <link rel="icon" type="image/png" href="/docs/favicon-32x32.png" />
     <style>
         html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
         *, *:before, *:after { box-sizing: inherit; }
@@ -40,14 +55,16 @@ router.get(["/", "/index.html"], (req, res) => {
 </head>
 <body>
     <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+    <script src="/docs/swagger-ui-bundle.js"></script>
+    <script src="/docs/swagger-ui-standalone-preset.js"></script>
     <script>
     window.onload = function() {
+        var basePath = window.location.pathname.replace(/\\/index\\.html$/, '').replace(/\\/$/, '');
         window.ui = SwaggerUIBundle({
-            url: "/api-docs/swagger.json",
+            url: (basePath || '/docs') + "/swagger.json",
             dom_id: '#swagger-ui',
             deepLinking: true,
+            persistAuthorization: true,
             presets: [
                 SwaggerUIBundle.presets.apis,
                 SwaggerUIStandalonePreset
@@ -64,5 +81,8 @@ router.get(["/", "/index.html"], (req, res) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.status(200).send(html);
 });
+
+// Servir archivos estáticos locales de swagger-ui-dist (swagger-ui.css, swagger-ui-bundle.js, etc.)
+router.use(express.static(swaggerUiDistPath, { index: false }));
 
 export default router;

@@ -1,4 +1,19 @@
 import prisma from "../prisma.js";
+import { artesanoPublicoDTO } from "../dtos/artesano.dto.js";
+import { invalidarCache } from "../utils/cache.js";
+
+const sanitizarStandPublico = (stand) => {
+    if (!stand) return null;
+    return {
+        ...stand,
+        inscripciones: Array.isArray(stand.inscripciones)
+            ? stand.inscripciones.map((insc) => ({
+                  ...insc,
+                  artesano: artesanoPublicoDTO(insc.artesano)
+              }))
+            : stand.inscripciones
+    };
+};
 
 export const getStands = async (filtros) => {
     const where = {};
@@ -55,13 +70,13 @@ export const getStands = async (filtros) => {
 
     const totalPages = Math.ceil(total / filtros.limit);
     return {
-        data: stands,
+        data: stands.map(sanitizarStandPublico),
         meta: { page: filtros.page, limit: filtros.limit, total, totalPages, hasNextPage: filtros.page < totalPages, hasPreviousPage: filtros.page > 1 }
     };
 };
 
 export const getStandById = async (id) => {
-    return await prisma.stand.findUnique({
+    const stand = await prisma.stand.findUnique({
         where: { id_stand: Number(id) },
         include: {
             zona: {
@@ -72,18 +87,25 @@ export const getStandById = async (id) => {
             }
         }
     });
+    return sanitizarStandPublico(stand);
 };
 
 export const crearStand = async (datos) => {
-    return await prisma.stand.create({ data: datos });
+    const creado = await prisma.stand.create({ data: datos });
+    invalidarCache("reportes:general", "reportes:stands-ocupacion");
+    return creado;
 };
 
 export const actualizarStand = async (id, datos) => {
-    return await prisma.stand.update({ where: { id_stand: Number(id) }, data: datos });
+    const actualizado = await prisma.stand.update({ where: { id_stand: Number(id) }, data: datos });
+    invalidarCache("reportes:general", "reportes:stands-ocupacion");
+    return actualizado;
 };
 
 export const eliminarStand = async (id) => {
-    return await prisma.stand.delete({ where: { id_stand: Number(id) } });
+    const eliminado = await prisma.stand.delete({ where: { id_stand: Number(id) } });
+    invalidarCache("reportes:general", "reportes:stands-ocupacion");
+    return eliminado;
 };
 
 // Criterio 4: Asignación artesano–stand (Solo ADMIN)
@@ -107,8 +129,9 @@ export const asignarArtesanoAStand = async (id_stand, id_artesano) => {
         where: { id_artesano: Number(id_artesano), anio: anioActual }
     });
 
+    let resultado;
     if (inscripcionExistente) {
-        return await prisma.inscripcion.update({
+        resultado = await prisma.inscripcion.update({
             where: { id_inscripcion: inscripcionExistente.id_inscripcion },
             data: {
                 id_stand: Number(id_stand),
@@ -117,20 +140,23 @@ export const asignarArtesanoAStand = async (id_stand, id_artesano) => {
             },
             include: { stand: true, artesano: true }
         });
+    } else {
+        resultado = await prisma.inscripcion.create({
+            data: {
+                id_artesano: Number(id_artesano),
+                id_stand: Number(id_stand),
+                anio: anioActual,
+                fecha_solicitud: new Date(),
+                fecha_resolucion: new Date(),
+                estado: "APROBADA",
+                observaciones: "Asignación directa por administrador"
+            },
+            include: { stand: true, artesano: true }
+        });
     }
 
-    return await prisma.inscripcion.create({
-        data: {
-            id_artesano: Number(id_artesano),
-            id_stand: Number(id_stand),
-            anio: anioActual,
-            fecha_solicitud: new Date(),
-            fecha_resolucion: new Date(),
-            estado: "APROBADA",
-            observaciones: "Asignación directa por administrador"
-        },
-        include: { stand: true, artesano: true }
-    });
+    invalidarCache("reportes:general", "reportes:stands-ocupacion");
+    return resultado;
 };
 
 // Endpoint de stands con ubicación: pabellón, sector y coordenadas en JSON
@@ -147,8 +173,7 @@ const formatearUbicacionStand = (stand) => {
         artesano: (stand.inscripciones && stand.inscripciones[0]?.artesano) ? {
             id_artesano: stand.inscripciones[0].artesano.id_artesano,
             nombre: stand.inscripciones[0].artesano.nombre,
-            apellido: stand.inscripciones[0].artesano.apellido,
-            dni: stand.inscripciones[0].artesano.dni
+            apellido: stand.inscripciones[0].artesano.apellido
         } : null,
         pabellon: stand.zona?.pabellon ? {
             id_pabellon: stand.zona.pabellon.id_pabellon,

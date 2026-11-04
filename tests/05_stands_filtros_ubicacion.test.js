@@ -1,35 +1,41 @@
-import { describe, it, before } from "node:test";
+import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
-import prisma from "../src/prisma.js";
-import { BASE_URL, obtenerUsuariosPrueba } from "./testHelper.js";
+
+// Criterio 2.4: Aserciones de NODE_ENV y del nombre de la base antes de importar la app
+assert.equal(process.env.NODE_ENV, "test", "NODE_ENV debe ser 'test'");
+assert.match(process.env.DATABASE_URL || "", /_test(\?|$)/i, "DATABASE_URL debe ser una base *_test");
+
+const {
+    BASE_URL,
+    prisma,
+    obtenerUsuariosPrueba,
+    limpiarBaseDeDatos,
+    cerrarEntornoPrueba
+} = await import("./testHelper.js");
 
 describe("05. Stands, Filtros, Ubicaciones y Asignaciones", () => {
     let ctx;
     let standPrueba;
 
     before(async () => {
+        await limpiarBaseDeDatos();
         ctx = await obtenerUsuariosPrueba();
 
-        let pabellon = await prisma.pabellon.findFirst();
-        if (!pabellon) {
-            pabellon = await prisma.pabellon.create({
-                data: { numero: 1, nombre: "Pabellón Turismo", descripcion: "Pabellón principal" }
-            });
-        }
+        const pabellon = await prisma.pabellon.create({
+            data: { numero: 1, nombre: "Pabellón Turismo", descripcion: "Pabellón principal" }
+        });
 
-        let zona = await prisma.zona.findFirst({ where: { id_pabellon: pabellon.id_pabellon } });
-        if (!zona) {
-            zona = await prisma.zona.create({
-                data: { numero: 1, nombre: "Sector Artesanías", id_pabellon: pabellon.id_pabellon }
-            });
-        }
+        const zona = await prisma.zona.create({
+            data: { numero: 1, nombre: "Sector Artesanías", id_pabellon: pabellon.id_pabellon }
+        });
 
-        standPrueba = await prisma.stand.findFirst({ where: { id_zona: zona.id_zona } });
-        if (!standPrueba) {
-            standPrueba = await prisma.stand.create({
-                data: { numero: 501, descripcion: "Stand de prueba", id_zona: zona.id_zona }
-            });
-        }
+        standPrueba = await prisma.stand.create({
+            data: { numero: 501, descripcion: "Stand de prueba", id_zona: zona.id_zona }
+        });
+    });
+
+    after(async () => {
+        await cerrarEntornoPrueba(); // Cierra servidor efímero y ejecuta prisma.$disconnect()
     });
 
     it("Consulta pública de stands GET /api/stands devuelve 200 con paginación", async () => {
@@ -41,10 +47,11 @@ describe("05. Stands, Filtros, Ubicaciones y Asignaciones", () => {
     });
 
     it("Filtro de stands por pabellón funciona correctamente", async () => {
-        const res = await fetch(`${BASE_URL}/api/stands?id_pabellon=1`);
+        const res = await fetch(`${BASE_URL}/api/stands?pabellon=Turismo`);
         assert.equal(res.status, 200);
         const data = await res.json();
         assert.ok(Array.isArray(data.data));
+        assert.ok(data.data.length >= 1);
     });
 
     it("Filtro de stands por sector/zona funciona correctamente", async () => {
@@ -52,6 +59,7 @@ describe("05. Stands, Filtros, Ubicaciones y Asignaciones", () => {
         assert.equal(res.status, 200);
         const data = await res.json();
         assert.ok(Array.isArray(data.data));
+        assert.ok(data.data.length >= 1);
     });
 
     it("Filtro de stands por estado DISPONIBLE u OCUPADO funciona correctamente", async () => {
@@ -72,7 +80,7 @@ describe("05. Stands, Filtros, Ubicaciones y Asignaciones", () => {
         const item = list[0];
         assert.ok(item.id_stand);
         assert.ok(item.numero);
-        assert.ok(item.estado); // "DISPONIBLE" u "OCUPADO"
+        assert.ok(item.estado);
         assert.ok(item.coordenadas);
         assert.equal(typeof item.coordenadas.x, "number");
         assert.equal(typeof item.coordenadas.y, "number");

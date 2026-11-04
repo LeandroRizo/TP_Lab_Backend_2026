@@ -1,3 +1,5 @@
+import { invalidarCache } from "../utils/cache.js";
+
 // Servicio para registro de consultas de visitantes y análisis de tendencias de búsqueda
 
 const MAX_HISTORIAL = 1000;
@@ -21,6 +23,7 @@ export const registrarBusqueda = ({ termino, entidad, ip, userAgent }) => {
         historialBusquedas.shift();
     }
 
+    invalidarCache("reportes:general", "reportes:tendencias-busqueda");
     return evento;
 };
 
@@ -62,4 +65,5 @@ export const obtenerTendencias = (limiteTop = 10) => {
 
 export const limpiarHistorialBusquedas = () => {
     historialBusquedas.length = 0;
+    invalidarCache("reportes:general", "reportes:tendencias-busqueda");
 };
