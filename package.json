@@ -6,8 +6,19 @@
   "type": "module",
   "scripts": {
     "start": "node --env-file=.env src/app.js",
-    "dev": "node --watch src/app.js",
+    "dev": "node --env-file=.env --watch src/app.js",
+    "docs": "node generar-docs.js",
+    "seed": "node --env-file=.env prisma/seed.js",
+    "start:exposicion": "node --env-file=.env.exposicion src/app.js",
+    "dev:exposicion": "node --env-file=.env.exposicion --watch src/app.js",
+    "seed:exposicion": "node --env-file=.env.exposicion prisma/seed-exposicion.js",
+    "test": "node --env-file=.env.test --test --test-concurrency=1 tests/**/*.test.js",
+    "test:unit": "node --env-file=.env.test --test tests/00_esquemas_unitarios.test.js",
+    "test:integracion": "node --env-file=.env.test --test --test-concurrency=1 tests/01_*.test.js tests/02_*.test.js tests/03_*.test.js tests/04_*.test.js tests/05_*.test.js tests/06_*.test.js tests/07_*.test.js tests/08_*.test.js",
     "postinstall": "prisma skills sync || exit 0"
+  },
+  "prisma": {
+    "seed": "node --env-file=.env prisma/seed.js"
   },
   "repository": {
     "type": "git",
@@ -22,9 +33,14 @@
   "homepage": "https://github.com/LeandroRizo/TP_Lab_Backend_2026#readme",
   "dependencies": {
     "@prisma/client": "^6.19.3",
-    "express": "^5.2.1"
+    "bcrypt": "^6.0.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "prisma": "^6.19.3"
+    "prisma": "^6.12.0",
+    "swagger-autogen": "^2.23.7"
   }
 }
