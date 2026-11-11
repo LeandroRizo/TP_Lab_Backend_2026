@@ -1,4 +1,3 @@
-import { rolQueryDTO } from "../dtos/rolQuery.dto.js";
 import {
     getRols,
     crearRol,
@@ -18,8 +17,7 @@ export const obtenerRols = async (req, res, next) => {
         #swagger.responses[200] = { description: 'Listado de roles' }
     */
     try {
-        const filtros = rolQueryDTO(req.queryValidada);
-        const data = await getRols(filtros);
+        const data = await getRols(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

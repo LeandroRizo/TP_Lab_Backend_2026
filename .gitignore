@@ -2,3 +2,8 @@ node_modules
 .env
 .env.test
 src/crear-admin-temporal.js
+
+.env
+.env.*
+!.env.example
+node_modules/

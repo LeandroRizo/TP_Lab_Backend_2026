@@ -4,7 +4,9 @@ import jwt from "jsonwebtoken";
 import prisma from "../prisma.js";
 import config from "../config/env.js";
 import { usuarioPublicoDTO } from "../dtos/auth.dto.js";
-import { invalidarCache } from "../utils/cache.js";
+import { obtenerOCrearRolPostulante } from "./rol.service.js";
+import { resolverLocalidadPorNombreYProvincia } from "./localidad.service.js";
+import { resolverRubroPorNombre } from "./rubro.service.js";
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -21,16 +23,7 @@ export const registrarUsuario = async ({ nombre, email, password }) => {
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
-
-    // Rol no-artesano por defecto para registros públicos normales
-    let rolPostulante = await prisma.rol.findFirst({
-        where: { nombre: { in: ["Postulante", "Usuario"], mode: "insensitive" } }
-    });
-    if (!rolPostulante) {
-        rolPostulante = await prisma.rol.create({
-            data: { nombre: "Postulante", descripcion: "Usuario registrado o postulante pendiente de aprobacion" }
-        });
-    }
+    const rolPostulante = await obtenerOCrearRolPostulante(prisma);
 
     const nuevoUsuario = await prisma.usuario.create({
         data: {
@@ -47,6 +40,7 @@ export const registrarUsuario = async ({ nombre, email, password }) => {
 };
 
 // Criterio 6: Postulación pública - crea cuenta, Artesano y solicitud PENDIENTE en una sola transacción
+// Admite indicar localidad y provincia por nombre normalizado o por id_localidad numérico
 export const postularArtesano = async (datos) => {
     const {
         nombre,
@@ -59,9 +53,54 @@ export const postularArtesano = async (datos) => {
         descripcion,
         instagram,
         id_localidad,
+        localidad,
+        provincia,
         id_rubro,
+        rubro,
         observaciones
     } = datos;
+
+    // 1. Resolver localidad (por nombre + provincia, o validar id_localidad)
+    let idLocalidadResuelto = id_localidad ? Number(id_localidad) : null;
+
+    if (localidad && provincia) {
+        const locEncontrada = await resolverLocalidadPorNombreYProvincia(localidad, provincia);
+        idLocalidadResuelto = locEncontrada.id_localidad;
+    } else if (idLocalidadResuelto) {
+        const existeLoc = await prisma.localidad.findUnique({
+            where: { id_localidad: idLocalidadResuelto }
+        });
+        if (!existeLoc) {
+            const error = new Error(`La localidad con ID ${idLocalidadResuelto} no existe`);
+            error.statusCode = 400;
+            throw error;
+        }
+    } else {
+        const error = new Error("Debe indicar la localidad (por nombre y provincia o id_localidad)");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // 2. Resolver rubro (por nombre normalizado o validar id_rubro numérico)
+    let idRubroResuelto = id_rubro ? Number(id_rubro) : null;
+
+    if (rubro) {
+        const rubroEncontrado = await resolverRubroPorNombre(rubro);
+        idRubroResuelto = rubroEncontrado.id_rubro;
+    } else if (idRubroResuelto) {
+        const existeRub = await prisma.rubro.findUnique({
+            where: { id_rubro: idRubroResuelto }
+        });
+        if (!existeRub) {
+            const error = new Error(`El rubro con ID ${idRubroResuelto} no existe`);
+            error.statusCode = 400;
+            throw error;
+        }
+    } else {
+        const error = new Error("Debe indicar el rubro (por nombre o id_rubro)");
+        error.statusCode = 400;
+        throw error;
+    }
 
     // Verificar email repetido -> 409
     const emailExistente = await prisma.usuario.findUnique({
@@ -84,15 +123,7 @@ export const postularArtesano = async (datos) => {
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
-
-    let rolPostulante = await prisma.rol.findFirst({
-        where: { nombre: { in: ["Postulante", "Usuario"], mode: "insensitive" } }
-    });
-    if (!rolPostulante) {
-        rolPostulante = await prisma.rol.create({
-            data: { nombre: "Postulante", descripcion: "Usuario registrado o postulante pendiente de aprobacion" }
-        });
-    }
+    const rolPostulante = await obtenerOCrearRolPostulante(prisma);
 
     // Una sola operación transaccional
     const resultado = await prisma.$transaction(async (tx) => {
@@ -117,8 +148,8 @@ export const postularArtesano = async (datos) => {
                 direccion,
                 descripcion,
                 instagram,
-                id_localidad: Number(id_localidad),
-                id_rubro: Number(id_rubro)
+                id_localidad: idLocalidadResuelto,
+                id_rubro: idRubroResuelto
             }
         });
 
@@ -132,8 +163,6 @@ export const postularArtesano = async (datos) => {
 
         return { usuario, artesano, solicitud };
     });
-
-    invalidarCache("reportes:general", "reportes:artesanos-localidad", "reportes:artesanos-rubro", "reportes:productos-artesano");
 
     return {
         usuario: usuarioPublicoDTO(resultado.usuario),

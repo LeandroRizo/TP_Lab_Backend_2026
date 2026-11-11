@@ -1,4 +1,3 @@
-import { artesanoQueryDTO } from "../dtos/artesanoQuery.dto.js";
 import {
     getArtesanos,
     crearArtesano,
@@ -80,8 +79,7 @@ export const obtenerArtesanos = async (req, res, next) => {
         }
     */
     try {
-        const filtros = artesanoQueryDTO(req.queryValidada);
-        const data = await getArtesanos(filtros);
+        const data = await getArtesanos(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

@@ -362,4 +362,62 @@ describe("03. Postulaciones, Aprobación y Estados", () => {
         assert.equal(resueltaData.artesano.usuario.passwordHash, undefined);
         assert.equal(JSON.stringify(resueltaData).includes("passwordHash"), false);
     });
+
+    it("11. Postulación intentando registrar nuevamente un email o DNI existente devuelve HTTP 409", async () => {
+        const timestamp = Date.now();
+        const emailBase = `duplicado_${timestamp}@postulante.test`;
+        const dniBase = `DNI_DUP_${timestamp}`;
+
+        // Postulación inicial válida
+        const resInicial = await fetch(`${BASE_URL}/api/postulacion`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                nombre: "Elena",
+                apellido: "Vega",
+                email: emailBase,
+                password: "ElenaPassword2026!",
+                dni: dniBase,
+                id_localidad: localidad.id_localidad,
+                id_rubro: rubro.id_rubro
+            })
+        });
+        assert.equal(resInicial.status, 201);
+
+        // 1. Intento con el mismo email y distinto DNI -> 409
+        const resEmailRepetido = await fetch(`${BASE_URL}/api/postulacion`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                nombre: "Elena Copia",
+                apellido: "Vega",
+                email: emailBase,
+                password: "ElenaPassword2026!",
+                dni: `OTRO_${dniBase}`,
+                id_localidad: localidad.id_localidad,
+                id_rubro: rubro.id_rubro
+            })
+        });
+        assert.equal(resEmailRepetido.status, 409);
+        const bodyEmailRepetido = await resEmailRepetido.json();
+        assert.match(bodyEmailRepetido.mensaje, /email ya se encuentra registrado/i);
+
+        // 2. Intento con distinto email y el mismo DNI -> 409
+        const resDniRepetido = await fetch(`${BASE_URL}/api/postulacion`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                nombre: "Elena Copia DNI",
+                apellido: "Vega",
+                email: `otro_${emailBase}`,
+                password: "ElenaPassword2026!",
+                dni: dniBase,
+                id_localidad: localidad.id_localidad,
+                id_rubro: rubro.id_rubro
+            })
+        });
+        assert.equal(resDniRepetido.status, 409);
+        const bodyDniRepetido = await resDniRepetido.json();
+        assert.match(bodyDniRepetido.mensaje, /DNI ya se encuentra registrado/i);
+    });
 });

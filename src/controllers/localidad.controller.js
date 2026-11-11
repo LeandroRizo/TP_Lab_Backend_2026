@@ -1,4 +1,3 @@
-import { localidadQueryDTO } from "../dtos/localidadQuery.dto.js";
 import {
     getLocalidads,
     crearLocalidad,
@@ -13,13 +12,16 @@ export const obtenerLocalidads = async (req, res, next) => {
         #swagger.summary = 'Listar localidades con paginación (Público)'
         #swagger.security = []
         #swagger.parameters['nombre'] = { in: 'query', description: 'Filtrar por nombre', required: false, '@schema': { type: 'string' } }
+        #swagger.parameters['provincia'] = { in: 'query', description: 'Filtrar por provincia', required: false, '@schema': { type: 'string' } }
+        #swagger.parameters['departamento'] = { in: 'query', description: 'Filtrar por departamento', required: false, '@schema': { type: 'string' } }
+        #swagger.parameters['sortBy'] = { in: 'query', description: 'Campo de ordenamiento', required: false, '@schema': { type: 'string', enum: ['nombre', 'provincia', 'departamento', 'id_localidad'], default: 'nombre' } }
+        #swagger.parameters['order'] = { in: 'query', description: 'Dirección de ordenamiento', required: false, '@schema': { type: 'string', enum: ['asc', 'desc'], default: 'asc' } }
         #swagger.parameters['page'] = { in: 'query', description: 'Página', required: false, '@schema': { type: 'integer', minimum: 1, default: 1 } }
         #swagger.parameters['limit'] = { in: 'query', description: 'Límite por página', required: false, '@schema': { type: 'integer', minimum: 1, maximum: 100, default: 10 } }
         #swagger.responses[200] = { description: 'Listado de localidades' }
     */
     try {
-        const filtros = localidadQueryDTO(req.queryValidada);
-        const data = await getLocalidads(filtros);
+        const data = await getLocalidads(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

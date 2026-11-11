@@ -1,12 +1,11 @@
 import prisma from "../prisma.js";
 import { artesanoPublicoDTO } from "../dtos/artesano.dto.js";
-import { invalidarCache } from "../utils/cache.js";
 
 // Consultas GET públicas (Criterio 4 y protección de datos personales de artesanos)
 export const getProductos = async (filtros) => {
     const where = {};
     if (filtros.nombre) {
-        where.nombre = { contains: filtros.nombre, mode: 'insensitive' };
+        where.nombre = { contains: filtros.nombre, mode: "insensitive" };
     }
     if (filtros.id_categoria) {
         where.id_categoria = Number(filtros.id_categoria);
@@ -41,7 +40,14 @@ export const getProductos = async (filtros) => {
             ...prod,
             artesano: artesanoPublicoDTO(prod.artesano)
         })),
-        meta: { page: filtros.page, limit: filtros.limit, total, totalPages, hasNextPage: filtros.page < totalPages, hasPreviousPage: filtros.page > 1 }
+        meta: {
+            page: filtros.page,
+            limit: filtros.limit,
+            total,
+            totalPages,
+            hasNextPage: filtros.page < totalPages,
+            hasPreviousPage: filtros.page > 1
+        }
     };
 };
 
@@ -62,7 +68,7 @@ export const getProductoById = async (id) => {
 
 // Criterio 5: Alta con id_artesano proveniente de la cuenta autenticada
 export const crearProducto = async (datos) => {
-    const nuevo = await prisma.producto.create({
+    return await prisma.producto.create({
         data: {
             nombre: datos.nombre,
             descripcion: datos.descripcion,
@@ -74,8 +80,6 @@ export const crearProducto = async (datos) => {
             categoria: true
         }
     });
-    invalidarCache("reportes:general", "reportes:productos-artesano");
-    return nuevo;
 };
 
 // Criterio 5: Modificar filtra por id y por el propietario en la misma consulta del servicio.
@@ -101,12 +105,10 @@ export const actualizarProductoPropio = async (id, id_artesano, datos) => {
         throw error;
     }
 
-    const actualizado = await prisma.producto.findUnique({
+    return await prisma.producto.findUnique({
         where: { id_producto: Number(id) },
         include: { categoria: true }
     });
-    invalidarCache("reportes:general", "reportes:productos-artesano");
-    return actualizado;
 };
 
 // Criterio 5: Eliminar filtra por id y por el propietario en la misma consulta del servicio.
@@ -124,8 +126,6 @@ export const eliminarProductoPropio = async (id, id_artesano) => {
         error.statusCode = 404;
         throw error;
     }
-
-    invalidarCache("reportes:general", "reportes:productos-artesano");
 };
 
 // Criterio 5: Listado propio sin parámetros del cliente

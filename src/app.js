@@ -16,13 +16,12 @@ import zonaRoutes from "./routes/zona.routes.js";
 import standRoutes from "./routes/stand.routes.js";
 import categoriaRoutes from "./routes/categoria.routes.js";
 import productoRoutes from "./routes/producto.routes.js";
-import reporteRoutes from "./routes/reporte.routes.js";
-import estadisticaRoutes from "./routes/estadistica.routes.js";
 import docRoutes from "./routes/doc.routes.js";
 
 // Controladores y middlewares para rutas directas
 import { postularse } from "./controllers/auth.controller.js";
-import { validarPostulacion } from "./middlewares/validarAuth.js";
+import { validarBody } from "./middlewares/validar.middleware.js";
+import { postulacionSchema } from "./schemas/auth.schema.js";
 
 // Middlewares
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -46,8 +45,8 @@ app.use("/api", /* #swagger.ignore = true */ authRoutes);
 app.use(/* #swagger.ignore = true */ authRoutes);
 
 // Criterio 4 & 6: Postulación pública directa
-app.post("/api/postulacion", validarPostulacion, postularse);
-app.post("/postulacion", /* #swagger.ignore = true */ validarPostulacion, postularse);
+app.post("/api/postulacion", validarBody(postulacionSchema, "Los datos de postulación no son válidos"), postularse);
+app.post("/postulacion", /* #swagger.ignore = true */ validarBody(postulacionSchema, "Los datos de postulación no son válidos"), postularse);
 
 // Endpoints de entidades del Poncho Digital
 app.use("/api/roles", rolRoutes);
@@ -62,10 +61,6 @@ app.use("/api/zonas", zonaRoutes);
 app.use("/api/stands", standRoutes);
 app.use("/api/categorias", categoriaRoutes);
 app.use("/api/productos", productoRoutes);
-
-// Reportes administrativos y estadísticas públicas
-app.use("/api/reportes", /* #swagger.security = [{ "bearerAuth": [] }] */ reporteRoutes);
-app.use("/api/estadisticas", estadisticaRoutes);
 
 app.get('/', (req, res) => {
     /*

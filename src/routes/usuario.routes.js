@@ -9,9 +9,11 @@ import {
     cambiarEstado
 } from "../controllers/usuario.controller.js";
 
-import { validarUsuario } from "../middlewares/validarUsuario.js";
-import { validarUsuarioQuery } from "../middlewares/validarUsuarioQuery.js";
-import { validarCrearAdmin, validarEstadoCuenta } from "../middlewares/validarCuenta.js";
+import { validarBody, validarQuery, validarParams } from "../middlewares/validar.middleware.js";
+import { usuarioSchema, usuarioActualizarSchema } from "../schemas/usuario.schema.js";
+import { usuarioQuerySchema } from "../schemas/usuarioQuery.schema.js";
+import { idUsuarioParamSchema } from "../schemas/param.schema.js";
+import { crearAdminSchema, estadoCuentaSchema } from "../schemas/cuenta.schema.js";
 import { autenticar } from "../middlewares/auth.middleware.js";
 import { contextoUsuario } from "../middlewares/contextoUsuario.js";
 import { autorizarRoles } from "../middlewares/autorizarRoles.js";
@@ -25,7 +27,7 @@ router.post(
     autenticar,
     contextoUsuario,
     autorizarRoles("ADMINISTRADOR"),
-    validarCrearAdmin,
+    validarBody(crearAdminSchema, "Los datos para crear administrador no son válidos"),
     crearAdmin
 );
 
@@ -34,7 +36,7 @@ router.post(
     autenticar,
     contextoUsuario,
     autorizarRoles("ADMINISTRADOR"),
-    validarCrearAdmin,
+    validarBody(crearAdminSchema, "Los datos para crear administrador no son válidos"),
     crearAdmin
 );
 
@@ -43,7 +45,8 @@ router.patch(
     autenticar,
     contextoUsuario,
     autorizarRoles("ADMINISTRADOR"),
-    validarEstadoCuenta,
+    validarParams(idUsuarioParamSchema),
+    validarBody(estadoCuentaSchema, "El estado de la cuenta debe indicarse con un valor booleano en el campo activo"),
     cambiarEstado
 );
 
@@ -52,7 +55,8 @@ router.put(
     autenticar,
     contextoUsuario,
     autorizarRoles("ADMINISTRADOR"),
-    validarEstadoCuenta,
+    validarParams(idUsuarioParamSchema),
+    validarBody(estadoCuentaSchema, "El estado de la cuenta debe indicarse con un valor booleano en el campo activo"),
     cambiarEstado
 );
 
@@ -61,15 +65,16 @@ router.patch(
     autenticar,
     contextoUsuario,
     autorizarRoles("ADMINISTRADOR"),
-    validarEstadoCuenta,
+    validarParams(idUsuarioParamSchema),
+    validarBody(estadoCuentaSchema, "El estado de la cuenta debe indicarse con un valor booleano en el campo activo"),
     cambiarEstado
 );
 
 // Endpoints generales de usuarios protegidos para ADMINISTRADOR
-router.get("/", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarUsuarioQuery, obtenerUsuarios);
-router.post("/", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarUsuario, crear);
-router.get("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), obtenerPorId);
-router.put("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarUsuario, actualizar);
-router.delete("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), eliminar);
+router.get("/", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarQuery(usuarioQuerySchema), obtenerUsuarios);
+router.post("/", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarBody(usuarioSchema, "Los datos de usuario no son válidos"), crear);
+router.get("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarParams(idUsuarioParamSchema), obtenerPorId);
+router.put("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarParams(idUsuarioParamSchema), validarBody(usuarioActualizarSchema, "Los datos de usuario no son válidos"), actualizar);
+router.delete("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarParams(idUsuarioParamSchema), eliminar);
 
 export default router;

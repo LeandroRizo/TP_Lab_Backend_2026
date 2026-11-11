@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import prisma from "../prisma.js";
+import { obtenerOCrearRolPostulante, obtenerOCrearRolAdministrador } from "./rol.service.js";
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -17,10 +18,10 @@ const USUARIO_PUBLICO_SELECT = {
 export const getUsuarios = async (filtros) => {
     const where = {};
     if (filtros.email) {
-        where.email = { contains: filtros.email, mode: 'insensitive' };
+        where.email = { contains: filtros.email, mode: "insensitive" };
     }
     if (filtros.nombre) {
-        where.nombre = { contains: filtros.nombre, mode: 'insensitive' };
+        where.nombre = { contains: filtros.nombre, mode: "insensitive" };
     }
 
     const skip = (filtros.page - 1) * filtros.limit;
@@ -38,7 +39,14 @@ export const getUsuarios = async (filtros) => {
     const totalPages = Math.ceil(total / filtros.limit);
     return {
         data: usuarios,
-        meta: { page: filtros.page, limit: filtros.limit, total, totalPages, hasNextPage: filtros.page < totalPages, hasPreviousPage: filtros.page > 1 }
+        meta: {
+            page: filtros.page,
+            limit: filtros.limit,
+            total,
+            totalPages,
+            hasNextPage: filtros.page < totalPages,
+            hasPreviousPage: filtros.page > 1
+        }
     };
 };
 
@@ -66,14 +74,7 @@ export const crearUsuario = async (datos) => {
 
     let idRol = datos.id_rol;
     if (!idRol) {
-        let rolPostulante = await prisma.rol.findFirst({
-            where: { nombre: { in: ["Postulante", "Usuario"], mode: "insensitive" } }
-        });
-        if (!rolPostulante) {
-            rolPostulante = await prisma.rol.create({
-                data: { nombre: "Postulante", descripcion: "Usuario registrado o postulante pendiente de aprobacion" }
-            });
-        }
+        const rolPostulante = await obtenerOCrearRolPostulante(prisma);
         idRol = rolPostulante.id_rol;
     }
 
@@ -128,14 +129,7 @@ export const crearAdministrador = async ({ nombre, email, password }) => {
     const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
     return await prisma.$transaction(async (tx) => {
-        let rolAdmin = await tx.rol.findFirst({
-            where: { nombre: { equals: "Administrador", mode: "insensitive" } }
-        });
-        if (!rolAdmin) {
-            rolAdmin = await tx.rol.create({
-                data: { nombre: "Administrador", descripcion: "Rol de Administrador del sistema" }
-            });
-        }
+        const rolAdmin = await obtenerOCrearRolAdministrador(tx);
 
         const nuevoAdmin = await tx.usuario.create({
             data: {
@@ -169,7 +163,7 @@ export const cambiarEstadoCuenta = async (id_usuario, activo) => {
 
         // Criterio 7: Desactivar al último administrador activo → 409
         if (activo === false) {
-            const esAdmin = usuario.rol?.nombre?.toLowerCase() === "administrador";
+            const esAdmin = usuario.rol && usuario.rol.nombre.toLowerCase() === "administrador";
 
             if (esAdmin && usuario.activo === true) {
                 const adminsActivos = await tx.usuario.count({

@@ -6,18 +6,20 @@ import {
     actualizar,
     eliminar
 } from "../controllers/rubro.controller.js";
-import { validarRubro } from "../middlewares/validarRubro.js";
-import { validarRubroQuery } from "../middlewares/validarRubroQuery.js";
+import { validarBody, validarQuery, validarParams } from "../middlewares/validar.middleware.js";
+import { rubroSchema } from "../schemas/rubro.schema.js";
+import { rubroQuerySchema } from "../schemas/rubroQuery.schema.js";
+import { idParamSchema } from "../schemas/param.schema.js";
 import { autenticar } from "../middlewares/auth.middleware.js";
 import { contextoUsuario } from "../middlewares/contextoUsuario.js";
 import { autorizarRoles } from "../middlewares/autorizarRoles.js";
 
 const router = express.Router();
 
-router.get("/", validarRubroQuery, obtenerRubros);
-router.post("/", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarRubro, crear);
-router.get("/:id", obtenerPorId);
-router.put("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarRubro, actualizar);
-router.delete("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), eliminar);
+router.get("/", validarQuery(rubroQuerySchema), obtenerRubros);
+router.post("/", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarBody(rubroSchema, "Los datos de rubro no son válidos"), crear);
+router.get("/:id", validarParams(idParamSchema), obtenerPorId);
+router.put("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarParams(idParamSchema), validarBody(rubroSchema, "Los datos de rubro no son válidos"), actualizar);
+router.delete("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarParams(idParamSchema), eliminar);
 
 export default router;

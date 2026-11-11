@@ -1,4 +1,3 @@
-import { categoriaQueryDTO } from "../dtos/categoriaQuery.dto.js";
 import {
     getCategorias,
     crearCategoria,
@@ -18,8 +17,7 @@ export const obtenerCategorias = async (req, res, next) => {
         #swagger.responses[200] = { description: 'Listado de categorías' }
     */
     try {
-        const filtros = categoriaQueryDTO(req.queryValidada);
-        const data = await getCategorias(filtros);
+        const data = await getCategorias(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

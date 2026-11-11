@@ -1,10 +1,9 @@
 import prisma from "../prisma.js";
-import { invalidarCache } from "../utils/cache.js";
 
 export const getInscripcions = async (filtros) => {
     const where = {};
     if (filtros.estado) {
-        where.estado = { contains: filtros.estado, mode: 'insensitive' };
+        where.estado = { contains: filtros.estado, mode: "insensitive" };
     }
 
     const skip = (filtros.page - 1) * filtros.limit;
@@ -21,7 +20,14 @@ export const getInscripcions = async (filtros) => {
     const totalPages = Math.ceil(total / filtros.limit);
     return {
         data: inscripcions,
-        meta: { page: filtros.page, limit: filtros.limit, total, totalPages, hasNextPage: filtros.page < totalPages, hasPreviousPage: filtros.page > 1 }
+        meta: {
+            page: filtros.page,
+            limit: filtros.limit,
+            total,
+            totalPages,
+            hasNextPage: filtros.page < totalPages,
+            hasPreviousPage: filtros.page > 1
+        }
     };
 };
 
@@ -30,19 +36,13 @@ export const getInscripcionById = async (id) => {
 };
 
 export const crearInscripcion = async (datos) => {
-    const creada = await prisma.inscripcion.create({ data: datos });
-    invalidarCache("reportes:general", "reportes:stands-ocupacion");
-    return creada;
+    return await prisma.inscripcion.create({ data: datos });
 };
 
 export const actualizarInscripcion = async (id, datos) => {
-    const actualizada = await prisma.inscripcion.update({ where: { id_inscripcion: Number(id) }, data: datos });
-    invalidarCache("reportes:general", "reportes:stands-ocupacion");
-    return actualizada;
+    return await prisma.inscripcion.update({ where: { id_inscripcion: Number(id) }, data: datos });
 };
 
 export const eliminarInscripcion = async (id) => {
-    const eliminada = await prisma.inscripcion.delete({ where: { id_inscripcion: Number(id) } });
-    invalidarCache("reportes:general", "reportes:stands-ocupacion");
-    return eliminada;
+    return await prisma.inscripcion.delete({ where: { id_inscripcion: Number(id) } });
 };

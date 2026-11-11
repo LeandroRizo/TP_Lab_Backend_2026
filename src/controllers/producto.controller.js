@@ -1,4 +1,3 @@
-import { productoQueryDTO } from "../dtos/productoQuery.dto.js";
 import {
     getProductos,
     crearProducto,
@@ -82,8 +81,7 @@ export const obtenerProductos = async (req, res, next) => {
         }
     */
     try {
-        const filtros = productoQueryDTO(req.queryValidada);
-        const data = await getProductos(filtros);
+        const data = await getProductos(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

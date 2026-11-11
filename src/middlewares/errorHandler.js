@@ -22,6 +22,14 @@ export const errorHandler = (err, req, res, next) => {
         });
     }
 
+    // Errores de clave foránea en Prisma (dependencias asociadas o referencia inválida)
+    if (err.code === "P2003" || (err.message && err.message.includes("foreign key constraint"))) {
+        return res.status(409).json({
+            mensaje: "Conflicto: no se puede completar la operación debido a dependencias con otros registros",
+            campo: err.meta?.field_name
+        });
+    }
+
     // Registro no encontrado en Prisma
     if (err.code === "P2025") {
         return res.status(404).json({
