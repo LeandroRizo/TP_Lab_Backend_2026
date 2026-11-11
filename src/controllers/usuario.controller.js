@@ -1,4 +1,3 @@
-import { usuarioQueryDTO } from "../dtos/usuarioQuery.dto.js";
 import {
     getUsuarios,
     crearUsuario,
@@ -57,8 +56,7 @@ export const obtenerUsuarios = async (req, res, next) => {
         }
     */
     try {
-        const filtros = usuarioQueryDTO(req.queryValidada);
-        const data = await getUsuarios(filtros);
+        const data = await getUsuarios(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

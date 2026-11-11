@@ -1,38 +1,4 @@
-// Criterio 1.5: El body no puede fijar rol ni otros campos internos.
-export const registroDTO = (datos) => {
-    return {
-        nombre: datos.nombre,
-        email: datos.email,
-        password: datos.password
-    };
-};
-
-export const loginDTO = (datos) => {
-    return {
-        email: datos.email,
-        password: datos.password
-    };
-};
-
-// Criterio 6: Postulación DTO
-export const postulacionDTO = (datos) => {
-    return {
-        nombre: datos.nombre,
-        apellido: datos.apellido,
-        email: datos.email,
-        password: datos.password,
-        dni: datos.dni,
-        telefono: datos.telefono,
-        direccion: datos.direccion,
-        descripcion: datos.descripcion,
-        instagram: datos.instagram,
-        id_localidad: datos.id_localidad,
-        id_rubro: datos.id_rubro,
-        observaciones: datos.observaciones
-    };
-};
-
-// Criterio 1.4: Respuestas sin datos sensibles (solo campos públicos)
+// Criterio 1.4: Respuestas sin datos sensibles (solo campos públicos, omitiendo passwordHash)
 export const usuarioPublicoDTO = (usuario) => {
     if (!usuario) return null;
     return {

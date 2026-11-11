@@ -9,4 +9,4 @@ export const inscripcionSchema = z.object({
     estado: z.string().trim(),
     motivo_rechazo: z.string().trim().optional(),
     observaciones: z.string().trim().optional()
-});
+}).strict();

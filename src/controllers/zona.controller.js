@@ -1,4 +1,3 @@
-import { zonaQueryDTO } from "../dtos/zonaQuery.dto.js";
 import {
     getZonas,
     crearZona,
@@ -18,8 +17,7 @@ export const obtenerZonas = async (req, res, next) => {
         #swagger.responses[200] = { description: 'Listado de zonas/sectores' }
     */
     try {
-        const filtros = zonaQueryDTO(req.queryValidada);
-        const data = await getZonas(filtros);
+        const data = await getZonas(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

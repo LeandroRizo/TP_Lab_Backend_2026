@@ -1,4 +1,3 @@
-import { rubroQueryDTO } from "../dtos/rubroQuery.dto.js";
 import {
     getRubros,
     crearRubro,
@@ -18,8 +17,7 @@ export const obtenerRubros = async (req, res, next) => {
         #swagger.responses[200] = { description: 'Listado de rubros' }
     */
     try {
-        const filtros = rubroQueryDTO(req.queryValidada);
-        const data = await getRubros(filtros);
+        const data = await getRubros(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

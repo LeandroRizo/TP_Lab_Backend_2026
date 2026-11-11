@@ -1,4 +1,3 @@
-import { pabellonQueryDTO } from "../dtos/pabellonQuery.dto.js";
 import {
     getPabellons,
     crearPabellon,
@@ -18,8 +17,7 @@ export const obtenerPabellons = async (req, res, next) => {
         #swagger.responses[200] = { description: 'Listado de pabellones' }
     */
     try {
-        const filtros = pabellonQueryDTO(req.queryValidada);
-        const data = await getPabellons(filtros);
+        const data = await getPabellons(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

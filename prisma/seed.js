@@ -1,7 +1,9 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import bcrypt from "bcrypt";
 import prisma from "../src/prisma.js";
+import { normalizarTexto } from "../src/utils/normalizarTexto.js";
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -41,25 +43,127 @@ export async function ejecutarSeed(env = process.env) {
         rolesMap[r.nombre] = rol;
     }
 
-    // 2. Localidades iniciales
-    const localidadesIniciales = [
-        "San Fernando del Valle de Catamarca",
-        "Belén",
-        "Santa María",
-        "Tinogasta",
-        "Andalgalá",
-        "Valle Viejo"
-    ];
+    // 2. Catálogo Oficial de Localidades (Georef INDEC / IGN)
+    // Importa 3.350 localidades nacionales (excluyendo la categoría 'Entidad')
+    const dirData = path.resolve("prisma/data");
+    let archivoLocalidades = null;
+
+    if (fs.existsSync(dirData)) {
+        const archivos = fs.readdirSync(dirData);
+        for (const f of archivos) {
+            const rutaCompleta = path.join(dirData, f);
+            if (f === "localidades.json") {
+                archivoLocalidades = rutaCompleta;
+                break;
+            }
+            if (f.endsWith(".json")) {
+                try {
+                    const contenido = fs.readFileSync(rutaCompleta, "utf-8");
+                    if (contenido.includes('"localidades"') && contenido.includes('"categoria"')) {
+                        archivoLocalidades = rutaCompleta;
+                        break;
+                    }
+                } catch {
+                    // ignorar errores de lectura
+                }
+            }
+        }
+    }
 
     let primeraLocalidad = null;
-    for (const nombreLoc of localidadesIniciales) {
-        let loc = await prisma.localidad.findFirst({
-            where: { nombre: { equals: nombreLoc, mode: "insensitive" } }
-        });
-        if (!loc) {
-            loc = await prisma.localidad.create({ data: { nombre: nombreLoc } });
+
+    if (archivoLocalidades) {
+        const rawJson = JSON.parse(fs.readFileSync(archivoLocalidades, "utf-8"));
+        const listaBruta = rawJson.localidades || [];
+
+        // Filtrar categorías: conservar "Localidad simple" y "Componente de localidad compuesta", excluir "Entidad"
+        const localidadesValidas = listaBruta.filter((l) => l.categoria !== "Entidad");
+
+        const registrosGeoref = localidadesValidas.map((l) => ({
+            id_georef: String(l.id),
+            nombre: l.nombre.trim(),
+            departamento: l.departamento?.nombre ? l.departamento.nombre.trim() : null,
+            provincia: l.provincia?.nombre ? l.provincia.nombre.trim() : null,
+            latitud: l.centroide?.lat != null ? Number(l.centroide.lat) : null,
+            longitud: l.centroide?.lon != null ? Number(l.centroide.lon) : null
+        }));
+
+        // 1. Migrar y enriquecer localidades existentes en la base que no tengan id_georef (preserva relaciones)
+        const existentes = await prisma.localidad.findMany();
+        const mapaGeorefExistentes = new Set();
+
+        for (const loc of existentes) {
+            if (loc.id_georef) {
+                mapaGeorefExistentes.add(loc.id_georef);
+            } else {
+                const normNombre = normalizarTexto(loc.nombre);
+                const match = registrosGeoref.find((r) => {
+                    const rNorm = normalizarTexto(r.nombre);
+                    const esMismoNombre = rNorm === normNombre;
+                    const esSanFernando = normNombre.includes("san fernando") && rNorm.includes("san fernando");
+                    return (esMismoNombre || esSanFernando) && normalizarTexto(r.provincia) === "catamarca";
+                });
+                if (match) {
+                    await prisma.localidad.update({
+                        where: { id_localidad: loc.id_localidad },
+                        data: {
+                            id_georef: match.id_georef,
+                            departamento: match.departamento,
+                            provincia: match.provincia,
+                            latitud: match.latitud,
+                            longitud: match.longitud
+                        }
+                    });
+                    mapaGeorefExistentes.add(match.id_georef);
+                } else if (normNombre === "valle viejo") {
+                    await prisma.localidad.update({
+                        where: { id_localidad: loc.id_localidad },
+                        data: {
+                            id_georef: "10112",
+                            departamento: "Valle Viejo",
+                            provincia: "Catamarca"
+                        }
+                    });
+                    mapaGeorefExistentes.add("10112");
+                }
+            }
         }
-        if (!primeraLocalidad) primeraLocalidad = loc;
+
+        // 2. Insertar las localidades restantes en lotes de 500 registros con skipDuplicates
+        const pendientes = registrosGeoref.filter((r) => !mapaGeorefExistentes.has(r.id_georef));
+        const BATCH_SIZE = 500;
+        for (let i = 0; i < pendientes.length; i += BATCH_SIZE) {
+            const lote = pendientes.slice(i, i + BATCH_SIZE);
+            await prisma.localidad.createMany({
+                data: lote,
+                skipDuplicates: true
+            });
+        }
+
+        // Obtener la localidad de prueba para el artesano demo (Belén oficial de Catamarca o San Fernando)
+        primeraLocalidad = await prisma.localidad.findFirst({
+            where: {
+                OR: [
+                    { id_georef: "10035020" },
+                    { nombre: { equals: "Belén", mode: "insensitive" } },
+                    { nombre: { contains: "Catamarca", mode: "insensitive" } }
+                ]
+            }
+        });
+    }
+
+    if (!primeraLocalidad) {
+        primeraLocalidad = await prisma.localidad.findFirst();
+        if (!primeraLocalidad) {
+            primeraLocalidad = await prisma.localidad.create({
+                data: {
+                    nombre: "San Fernando del Valle de Catamarca",
+                    departamento: "Capital",
+                    provincia: "Catamarca",
+                    id_georef: "10049030"
+                }
+            });
+        }
     }
 
     // 3. Rubros artesanales iniciales

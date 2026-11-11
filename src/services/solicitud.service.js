@@ -1,5 +1,5 @@
 import prisma from "../prisma.js";
-import { invalidarCache } from "../utils/cache.js";
+import { obtenerRolPorNombre } from "./rol.service.js";
 
 // Selección segura de campos públicos de usuario (nunca incluye passwordHash)
 const USUARIO_PUBLICO_SELECT = {
@@ -17,7 +17,7 @@ const USUARIO_PUBLICO_SELECT = {
 export const getSolicitudes = async (filtros = {}) => {
     const where = {};
     if (filtros.estado) {
-        where.estado = { equals: filtros.estado, mode: 'insensitive' };
+        where.estado = { equals: filtros.estado, mode: "insensitive" };
     }
 
     const page = filtros.page || 1;
@@ -121,9 +121,7 @@ export const resolverSolicitud = async (id_solicitud, { estado, motivo_rechazo, 
     const solicitudActualizada = await prisma.$transaction(async (tx) => {
         // Criterio 6: Al aprobar, la cuenta queda habilitada como ARTESANO en la misma transacción
         if (esAprobada) {
-            const rolArtesano = await tx.rol.findFirst({
-                where: { nombre: { equals: "Artesano", mode: "insensitive" } }
-            });
+            const rolArtesano = await obtenerRolPorNombre("Artesano", tx);
             if (!rolArtesano) {
                 const error = new Error("El rol Artesano no se encuentra configurado en el sistema");
                 error.statusCode = 500;
@@ -163,6 +161,5 @@ export const resolverSolicitud = async (id_solicitud, { estado, motivo_rechazo, 
         return actualizada;
     });
 
-    invalidarCache("reportes:general", "reportes:artesanos-localidad", "reportes:artesanos-rubro", "reportes:productos-artesano");
     return solicitudActualizada;
 };

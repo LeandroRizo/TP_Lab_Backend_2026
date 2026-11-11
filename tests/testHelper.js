@@ -18,7 +18,6 @@ assert.match(
 const { app } = await import("../src/app.js");
 const { default: config } = await import("../src/config/env.js");
 const { default: prisma } = await import("../src/prisma.js");
-const { invalidarCache } = await import("../src/utils/cache.js");
 
 // Criterio 2.1 (Nivel 2): Iniciar servidor efímero en memoria para no requerir `npm run dev`
 const servidor = await new Promise((resolve) => {
@@ -57,7 +56,6 @@ export const limpiarBaseDeDatos = async () => {
     await prisma.rubro.deleteMany();
     await prisma.usuario.deleteMany();
     await prisma.rol.deleteMany();
-    invalidarCache();
 };
 
 // Generar token JWT firmado válido directamente para tests

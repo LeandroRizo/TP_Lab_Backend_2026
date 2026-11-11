@@ -3,7 +3,7 @@ import prisma from "../prisma.js";
 export const getRols = async (filtros) => {
     const where = {};
     if (filtros.nombre) {
-        where.nombre = { contains: filtros.nombre, mode: 'insensitive' };
+        where.nombre = { contains: filtros.nombre, mode: "insensitive" };
     }
 
     const skip = (filtros.page - 1) * filtros.limit;
@@ -20,7 +20,14 @@ export const getRols = async (filtros) => {
     const totalPages = Math.ceil(total / filtros.limit);
     return {
         data: rols,
-        meta: { page: filtros.page, limit: filtros.limit, total, totalPages, hasNextPage: filtros.page < totalPages, hasPreviousPage: filtros.page > 1 }
+        meta: {
+            page: filtros.page,
+            limit: filtros.limit,
+            total,
+            totalPages,
+            hasNextPage: filtros.page < totalPages,
+            hasPreviousPage: filtros.page > 1
+        }
     };
 };
 
@@ -38,4 +45,39 @@ export const actualizarRol = async (id, datos) => {
 
 export const eliminarRol = async (id) => {
     return await prisma.rol.delete({ where: { id_rol: Number(id) } });
+};
+
+// Funciones auxiliares reutilizables para buscar o asegurar roles por nombre (sin usar IDs fijos)
+export const obtenerRolPorNombre = async (nombre, clientePrisma = prisma) => {
+    return await clientePrisma.rol.findFirst({
+        where: { nombre: { equals: nombre, mode: "insensitive" } }
+    });
+};
+
+export const obtenerOCrearRolPostulante = async (clientePrisma = prisma) => {
+    let rol = await clientePrisma.rol.findFirst({
+        where: { nombre: { in: ["Postulante", "Usuario"], mode: "insensitive" } }
+    });
+    if (!rol) {
+        rol = await clientePrisma.rol.create({
+            data: {
+                nombre: "Postulante",
+                descripcion: "Usuario registrado o postulante pendiente de aprobacion"
+            }
+        });
+    }
+    return rol;
+};
+
+export const obtenerOCrearRolAdministrador = async (clientePrisma = prisma) => {
+    let rol = await obtenerRolPorNombre("Administrador", clientePrisma);
+    if (!rol) {
+        rol = await clientePrisma.rol.create({
+            data: {
+                nombre: "Administrador",
+                descripcion: "Rol de Administrador del sistema"
+            }
+        });
+    }
+    return rol;
 };

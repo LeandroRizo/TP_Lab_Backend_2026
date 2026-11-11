@@ -6,19 +6,20 @@ import {
     actualizar,
     eliminar
 } from "../controllers/artesano.controller.js";
-import { validarArtesano } from "../middlewares/validarArtesano.js";
-import { validarArtesanoQuery } from "../middlewares/validarArtesanoQuery.js";
+import { validarBody, validarQuery, validarParams } from "../middlewares/validar.middleware.js";
+import { artesanoSchema } from "../schemas/artesano.schema.js";
+import { artesanoQuerySchema } from "../schemas/artesanoQuery.schema.js";
+import { idParamSchema } from "../schemas/param.schema.js";
 import { autenticar } from "../middlewares/auth.middleware.js";
 import { contextoUsuario } from "../middlewares/contextoUsuario.js";
 import { autorizarRoles } from "../middlewares/autorizarRoles.js";
-import { registroConsultas } from "../middlewares/registroConsultas.js";
 
 const router = express.Router();
 
-router.get("/", registroConsultas("artesanos"), validarArtesanoQuery, obtenerArtesanos);
-router.post("/", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarArtesano, crear);
-router.get("/:id", obtenerPorId);
-router.put("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarArtesano, actualizar);
-router.delete("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), eliminar);
+router.get("/", validarQuery(artesanoQuerySchema), obtenerArtesanos);
+router.post("/", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarBody(artesanoSchema, "Los datos de artesano no son válidos"), crear);
+router.get("/:id", validarParams(idParamSchema), obtenerPorId);
+router.put("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarParams(idParamSchema), validarBody(artesanoSchema, "Los datos de artesano no son válidos"), actualizar);
+router.delete("/:id", autenticar, contextoUsuario, autorizarRoles("ADMINISTRADOR"), validarParams(idParamSchema), eliminar);
 
 export default router;

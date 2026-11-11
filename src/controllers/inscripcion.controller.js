@@ -1,4 +1,3 @@
-import { inscripcionQueryDTO } from "../dtos/inscripcionQuery.dto.js";
 import {
     getInscripcions,
     crearInscripcion,
@@ -18,8 +17,7 @@ export const obtenerInscripcions = async (req, res, next) => {
         #swagger.responses[200] = { description: 'Listado de inscripciones' }
     */
     try {
-        const filtros = inscripcionQueryDTO(req.queryValidada);
-        const data = await getInscripcions(filtros);
+        const data = await getInscripcions(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);

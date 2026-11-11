@@ -1,0 +1,3358 @@
+{
+  "info": {
+    "_postman_id": "827d4d9b-d87e-4e98-afff-612752faafed",
+    "name": "Poncho Digital — Exposición Final Integrador Backend (Definitiva)",
+    "description": "Versión definitiva, verificada y auditada para la exposición oral y evaluación práctica del Trabajo Práctico Integrador Backend Poncho Digital 2026. Configurada con la pestaña nativa Authorization (Bearer Token) con campo vacío para pegado manual. 0 variables, 0 dependencias de Vault, 0 encabezados manuales duplicados. IDs de productos 2 y 3 alineados con las pruebas manuales reales aprobadas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Registro y duplicados",
+      "item": [
+        {
+          "name": "1.1 POST /api/postulacion — Registro Artesano A (con Georef 'bElEn' y 'cAtAmArCa')",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos Alberto\",\n  \"apellido\": \"Gómez\",\n  \"email\": \"carlos.artesano.belen@ponchodigital.com\",\n  \"password\": \"Password123!\",\n  \"dni\": \"28100201\",\n  \"telefono\": \"3835401122\",\n  \"direccion\": \"San Martín 450\",\n  \"descripcion\": \"Tejedor tradicional en telar criollo y lana de vicuña\",\n  \"instagram\": \"@belen_tejidos\",\n  \"localidad\": \"bElEn\",\n  \"provincia\": \"cAtAmArCa\",\n  \"rubro\": \"Textil\",\n  \"observaciones\": \"Postulación para stand en Pabellón Central\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/postulacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "postulacion"
+              ]
+            },
+            "description": "Registra la postulación atómica de Carlos Gómez. Observá en la respuesta JSON el id_solicitud (ej: 1), id_artesano (ej: 2) e id_usuario. Copiá el id_solicitud devuelto para usarlo en la Carpeta 04."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201 Created — Postulación registrada exitosamente\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Estructura de respuesta correcta con solicitud, artesano y usuario\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('solicitud');",
+                  "    pm.expect(jsonData).to.have.property('artesano');",
+                  "    pm.expect(jsonData).to.have.property('usuario');",
+                  "    pm.expect(jsonData.solicitud.estado).to.eql('PENDIENTE');",
+                  "});",
+                  "pm.test(\"Georef: Resuelve localidad 'Belén' en 'Catamarca' (id_localidad = 2)\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.artesano.id_localidad).to.eql(2);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 POST /api/postulacion — Registro Artesano B (con Georef 'Tinogasta' y 'Catamarca')",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mariana\",\n  \"apellido\": \"Carrizo\",\n  \"email\": \"mariana.ceramica.tinogasta@ponchodigital.com\",\n  \"password\": \"Password123!\",\n  \"dni\": \"31200302\",\n  \"telefono\": \"3837420033\",\n  \"direccion\": \"Av. de las Américas 120\",\n  \"descripcion\": \"Cerámica y alfarería ancestral tinogasteña\",\n  \"instagram\": \"@tinogasta_barro\",\n  \"localidad\": \"Tinogasta\",\n  \"provincia\": \"Catamarca\",\n  \"rubro\": \"Cerámica\",\n  \"observaciones\": \"Solicitud stand alfarero\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/postulacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "postulacion"
+              ]
+            },
+            "description": "Registra la postulación atómica de Mariana Carrizo. Observá el id_solicitud devuelto (ej: 2) y anótalo para la aprobación en la Carpeta 04."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201 Created — Postulación registrada exitosamente\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Estructura de respuesta contiene solicitud PENDIENTE\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.solicitud.estado).to.eql('PENDIENTE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 POST /api/postulacion — Registro Postulante C (para posterior rechazo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Esteban\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"esteban.postulante.c@ponchodigital.com\",\n  \"password\": \"Password123!\",\n  \"dni\": \"35400503\",\n  \"telefono\": \"3834112233\",\n  \"direccion\": \"Sarmiento 780\",\n  \"descripcion\": \"Postulación de cestería vegetal para evaluación\",\n  \"instagram\": \"@esteban_cesteria\",\n  \"localidad\": \"Andalgalá\",\n  \"provincia\": \"Catamarca\",\n  \"rubro\": \"Cestería y Fibra Vegetal\",\n  \"observaciones\": \"Solicitud para evaluación de fiscalización\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/postulacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "postulacion"
+              ]
+            },
+            "description": "Registra una postulación para probar el caso de rechazo administrativo. Observá el id_solicitud devuelto (ej: 3)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201 Created — Postulación registrada exitosamente\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4 POST /api/postulacion — Intento de registrar email ya existente (HTTP 409 Conflict)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos Clon\",\n  \"apellido\": \"Gómez\",\n  \"email\": \"carlos.artesano.belen@ponchodigital.com\",\n  \"password\": \"Password123!\",\n  \"dni\": \"28999999\",\n  \"telefono\": \"3835409999\",\n  \"direccion\": \"San Martín 450\",\n  \"descripcion\": \"Intento de registro con email duplicado\",\n  \"instagram\": \"@belen_tejidos\",\n  \"localidad\": \"Belén\",\n  \"provincia\": \"Catamarca\",\n  \"rubro\": \"Textil\",\n  \"observaciones\": \"Debe fallar por email duplicado\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/postulacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "postulacion"
+              ]
+            },
+            "description": "Intenta registrar una nueva cuenta con el email de Carlos Gómez ya existente. Demuestra que el backend rechaza emails duplicados con HTTP 409."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409 Conflict — Rechaza email duplicado\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.5 POST /api/postulacion — Intento de registrar DNI ya existente (HTTP 409 Conflict)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mariana Clon\",\n  \"apellido\": \"Carrizo\",\n  \"email\": \"mariana.otro.email@ponchodigital.com\",\n  \"password\": \"Password123!\",\n  \"dni\": \"31200302\",\n  \"telefono\": \"3837429999\",\n  \"direccion\": \"Av. de las Américas 120\",\n  \"descripcion\": \"Intento de registro con DNI duplicado\",\n  \"instagram\": \"@tinogasta_barro\",\n  \"localidad\": \"Tinogasta\",\n  \"provincia\": \"Catamarca\",\n  \"rubro\": \"Cerámica\",\n  \"observaciones\": \"Debe fallar por DNI duplicado\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/postulacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "postulacion"
+              ]
+            },
+            "description": "Intenta registrar con el DNI de Mariana Carrizo ya existente pero diferente email. Demuestra que el DNI es único."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409 Conflict — Rechaza DNI duplicado\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.6 POST /api/postulacion — Validación Zod: datos incompletos o contraseña corta (HTTP 400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Test\",\n  \"email\": \"invalido\",\n  \"password\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/postulacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "postulacion"
+              ]
+            },
+            "description": "Envía datos incompletos y contraseña menor a 6 caracteres. Zod rechaza la petición con HTTP 400."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 Bad Request — Validación Zod rechaza payload inválido\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "02 - Login y autenticación",
+      "item": [
+        {
+          "name": "2.1 POST /api/auth/login — Login de Administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ponchodigital.gob.ar\",\n  \"password\": \"Admin1234!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión con la cuenta de Administrador. Observá el campo 'token' en la respuesta JSON. Copiá ese valor manualmente para pegarlo en Authorization -> Bearer Token en las operaciones de administración (solicitudes, stands, usuarios)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Login Administrador exitoso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta incluye token JWT y datos de usuario administrador\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.expect(jsonData).to.have.property('usuario');",
+                  "    pm.expect(jsonData.usuario.rol.nombre).to.eql('Administrador');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 POST /api/auth/login — Login inicial de Artesano A (Rol Postulante)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos.artesano.belen@ponchodigital.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión con la cuenta recién registrada de Carlos Gómez. Observá que su rol es 'Postulante' porque su solicitud aún está PENDIENTE. Copiá este token para probar los accesos denegados en la Carpeta 03."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Login exitoso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Usuario tiene rol inicial Postulante\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.usuario.rol.nombre).to.eql('Postulante');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 POST /api/auth/login — Login inicial de Artesano B (Rol Postulante)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mariana.ceramica.tinogasta@ponchodigital.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión con Mariana Carrizo. Su rol es 'Postulante'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Login exitoso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Usuario tiene rol inicial Postulante\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.usuario.rol.nombre).to.eql('Postulante');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.4 GET /api/auth/me — Perfil de Administrador autenticado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Pegá en Authorization -> Bearer Token el token copiado del login de Administrador (2.1). Comprueba que devuelve los datos del administrador sin exponer passwordHash."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Perfil recuperado correctamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Verifica rol Administrador y no expone passwordHash\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.rol.nombre).to.eql('Administrador');",
+                  "    pm.expect(jsonData).to.not.have.property('passwordHash');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.5 GET /api/auth/me — Perfil de Artesano A autenticado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Pegá en Authorization -> Bearer Token el token de Carlos Gómez copiado en 2.2. Comprueba sus datos y perfil de artesano."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Perfil recuperado correctamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta contiene perfil de artesano asociado\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('artesano');",
+                  "    pm.expect(jsonData).to.not.have.property('passwordHash');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.6 POST /api/auth/login — Login con contraseña incorrecta (HTTP 401 Unauthorized)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos.artesano.belen@ponchodigital.com\",\n  \"password\": \"PasswordErronea123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Intenta login con credenciales erróneas. El backend responde HTTP 401 con mensaje genérico seguro."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401 Unauthorized — Credenciales inválidas\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.7 POST /api/auth/login — Login de Artesano de demostración (Seed preexistente)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"artesano.belen@ponchodigital.gob.ar\",\n  \"password\": \"Artesano1234!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión con la cuenta de Artesano de demostración precargada en la base de desarrollo poncho_digital (Rosaura Quiroga, Belén). Devuelve HTTP 200 y rol 'Artesano'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Login Artesano exitoso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta incluye token JWT y datos de usuario artesano\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.expect(jsonData).to.have.property('usuario');",
+                  "    pm.expect(jsonData.usuario.rol.nombre).to.eql('Artesano');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "03 - Roles y permisos",
+      "item": [
+        {
+          "name": "3.1 GET /api/solicitudes — Artesano intenta acceder a endpoint de Administrador (HTTP 403 Forbidden)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes"
+              ]
+            },
+            "description": "Pegá el token de Artesano (de 2.7 o de Carlos Gómez en 2.2). Intenta acceder al listado de solicitudes que es exclusivo de Administrador. Devuelve HTTP 403 Forbidden."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403 Forbidden — Bloquea acceso a no-administrador\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2 POST /api/productos — Postulante pendiente intenta crear producto antes de aprobación (HTTP 403 Forbidden)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Poncho Inicial\",\n  \"descripcion\": \"Intento de publicación sin autorización\",\n  \"precio\": 150000,\n  \"id_categoria\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "description": "Pegá el token de Postulante de Carlos Gómez (2.2). Demuestra la regla crítica de negocio: mientras la solicitud está PENDIENTE, no puede crear productos (HTTP 403)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403 Forbidden — Postulante no puede crear productos\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.3 POST /api/usuarios/administrador — Artesano intenta crear administrador (HTTP 403 Forbidden)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Admin Falso\",\n  \"apellido\": \"Hacker\",\n  \"email\": \"admin.hacker@ponchodigital.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/usuarios/administrador",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "usuarios",
+                "administrador"
+              ]
+            },
+            "description": "Pegá el token de Carlos Gómez (2.2). Intenta crear un usuario administrador. Devuelve HTTP 403."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403 Forbidden — Requiere rol Administrador\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.4 GET /api/solicitudes — Acceso sin token a ruta protegida (HTTP 401 Unauthorized)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes"
+              ]
+            },
+            "description": "Intenta acceder a una ruta protegida sin enviar cabecera Authorization ni token. Devuelve HTTP 401."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401 Unauthorized — Token no proporcionado\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.5 GET /api/solicitudes — Token adulterado o firma inválida (HTTP 401 Unauthorized)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.token_falso_adulterado.firma_invalida",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes"
+              ]
+            },
+            "description": "Envía un token JWT con firma corrupta o inválida. El middleware de autenticación lo rechaza con HTTP 401."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401 Unauthorized — Token inválido o firma errónea\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "04 - Administración de solicitudes",
+      "item": [
+        {
+          "name": "4.1 GET /api/solicitudes — Listado general de solicitudes (Solo Administrador)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes"
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1). Devuelve el listado paginado de todas las solicitudes con sus postulantes."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Listado de solicitudes obtenido\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta contiene array de solicitudes\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(Array.isArray(jsonData.data)).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 GET /api/solicitudes?estado=PENDIENTE — Filtrar exclusivamente solicitudes pendientes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes?estado=PENDIENTE",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "PENDIENTE"
+                }
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1). Filtra y devuelve solo las solicitudes con estado PENDIENTE."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Filtro de solicitudes pendientes correcto\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Todas las solicitudes devueltas están en estado PENDIENTE\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    jsonData.data.forEach(item => pm.expect(item.estado).to.eql('PENDIENTE'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.3 GET /api/solicitudes/1 — Detalle de solicitud de Artesano A",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes",
+                "1"
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1). Si en tu base el ID de la solicitud de Carlos Gómez (1.1) fue distinto de 1, reemplazá el número en la URL. Devuelve el detalle de la solicitud sin exponer passwordHash."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Detalle de solicitud obtenido\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Verifica datos de solicitud y no exposición de passwordHash\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id_solicitud');",
+                  "    pm.expect(jsonData).to.not.have.property('passwordHash');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.4 PUT /api/solicitudes/1/resolver — Aprobar Artesano A (Transacción atómica a rol Artesano)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"APROBADA\",\n  \"observaciones\": \"Postulación evaluada y aprobada por el comité de fiscalización de la Fiesta del Poncho\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes/1/resolver",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes",
+                "1",
+                "resolver"
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1) en la pestaña Authorization (Bearer Token). En una base limpia de exposición, el ID de solicitud es 1 (generado en 1.1). Si se ejecuta sobre desarrollo con datos previos, verificar el id_solicitud devuelto en 1.1 y colocarlo en la URL. Aprueba atómicamente la solicitud y promueve a Carlos Gómez al rol \"Artesano\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Solicitud resuelta exitosamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estado de solicitud cambia a APROBADA\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.estado).to.eql(\"APROBADA\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.5 PUT /api/solicitudes/2/resolver — Aprobar Artesano B",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"APROBADA\",\n  \"observaciones\": \"Aprobada para el sector cerámico tradicional\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes/2/resolver",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes",
+                "2",
+                "resolver"
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1) en la pestaña Authorization (Bearer Token). En una base limpia de exposición, el ID de solicitud de Mariana es 2 (generado en 1.2). Si se ejecuta sobre desarrollo con datos previos (donde la solicitud 2 correspondía a un usuario histórico), reemplazar el 2 en la URL por el id_solicitud devuelto en 1.2. Aprueba su postulación."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Solicitud de Artesano B aprobada\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estado de solicitud cambia a APROBADA\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.estado).to.eql(\"APROBADA\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.6 PUT /api/solicitudes/3/resolver — Rechazar Postulante C con motivo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"RECHAZADA\",\n  \"motivo_rechazo\": \"No cumple con las bases y condiciones del reglamento artesanal\",\n  \"observaciones\": \"Evaluación negativa de antecedentes técnicos\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes/3/resolver",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes",
+                "3",
+                "resolver"
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1) en la pestaña Authorization (Bearer Token). En una base limpia de exposición, el ID de solicitud de Esteban es 3 (generado en 1.3). Si se ejecuta sobre desarrollo con datos previos, reemplazar el 3 en la URL por el id_solicitud devuelto en 1.3. Cambia su estado a RECHAZADA sin promoverlo a Artesano."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Solicitud rechazada correctamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estado de solicitud cambia a RECHAZADA\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.estado).to.eql(\"RECHAZADA\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.7 PUT /api/solicitudes/1/resolver — Intento de resolver solicitud ya resuelta (HTTP 409 Conflict)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"APROBADA\",\n  \"observaciones\": \"Intento ilegal de re-aprobar\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes/1/resolver",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes",
+                "1",
+                "resolver"
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1). Intenta volver a resolver la solicitud de Carlos Gómez ya resuelta. El backend responde HTTP 409 Conflict por inmutabilidad de estados terminales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409 Conflict — Solicitud ya resuelta no puede modificarse\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.8 PUT /api/solicitudes/99999999/resolver — Intento de resolver solicitud inexistente (HTTP 404 Not Found)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"APROBADA\",\n  \"observaciones\": \"ID inexistente\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes/99999999/resolver",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes",
+                "99999999",
+                "resolver"
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1). Intenta resolver una solicitud con ID inexistente. Devuelve HTTP 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404 Not Found — Solicitud no encontrada\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.9 PUT /api/solicitudes/1/resolver — Intento de resolver sin rol Administrador (HTTP 403 Forbidden)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"APROBADA\",\n  \"observaciones\": \"Intento no autorizado\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/solicitudes/1/resolver",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "solicitudes",
+                "1",
+                "resolver"
+              ]
+            },
+            "description": "Pegá el token de Carlos Gómez (2.2). Intenta resolver su propia solicitud. El middleware RBAC devuelve HTTP 403 Forbidden."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403 Forbidden — Requiere rol Administrador\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "05 - Aprobación y asignación de stands",
+      "item": [
+        {
+          "name": "5.1 GET /api/stands?estado=DISPONIBLE — Consultar stands disponibles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/stands?estado=DISPONIBLE",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "stands"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "DISPONIBLE"
+                }
+              ]
+            },
+            "description": "Consulta pública de stands con estado DISPONIBLE. Observá el id_stand del primer stand disponible (ej: 1 o 2) para utilizarlo en la asignación 5.4."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Stands disponibles obtenidos\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Devuelve array de stands\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(Array.isArray(jsonData.data)).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.2 GET /api/pabellones — Consultar pabellones del predio ferial",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/pabellones",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "pabellones"
+              ]
+            },
+            "description": "Consulta pública del catálogo de pabellones feriales (Peregrina Zárate, Bicentenario, etc.)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Pabellones obtenidos\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.3 GET /api/zonas — Consultar zonas/sectores del predio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/zonas",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "zonas"
+              ]
+            },
+            "description": "Consulta pública del catálogo de zonas y sectores del predio ferial."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Zonas obtenidas\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.4 PUT /api/stands/1/asignar — Asignar stand a Artesano A (Solo Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_artesano\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/stands/1/asignar",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "stands",
+                "1",
+                "asignar"
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1) en la pestaña Authorization (Bearer Token). En una base limpia de exposición, el Stand 1 y Artesano 1 (Carlos Gómez) están listos para asociarse. Si se corre sobre desarrollo, verificar el ID de stand disponible (5.1) y el ID de artesano aprobado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Stand asignado exitosamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estructura de respuesta contiene datos de asignación\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const inscripcion = jsonData.data || jsonData;",
+                  "    pm.expect(inscripcion).to.have.property(\"id_stand\");",
+                  "    pm.expect(inscripcion.estado).to.eql(\"APROBADA\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.5 GET /api/stands/1/ubicacion — Verificar stand asignado (coordenadas y pabellón)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/stands/1/ubicacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "stands",
+                "1",
+                "ubicacion"
+              ]
+            },
+            "description": "Reemplazá el ID en la URL por el stand asignado (ej: 1). Verifica la ubicación espacial, coordenadas JSON y datos de ocupación del stand."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Ubicación del stand obtenida\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Contiene coordenadas JSON\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('coordenadas');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.6 GET /api/stands/ubicacion — Mapa ferial completo de stands con coordenadas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/stands/ubicacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "stands",
+                "ubicacion"
+              ]
+            },
+            "description": "Consulta pública para mapas feriales con todas las ubicaciones y coordenadas espaciales de stands."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Mapa de stands con coordenadas obtenido\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.7 PUT /api/stands/1/asignar — Intento de asignar stand sin rol Administrador (HTTP 403 Forbidden)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_artesano\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/stands/1/asignar",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "stands",
+                "1",
+                "asignar"
+              ]
+            },
+            "description": "Pegá el token de Carlos Gómez (2.2). Intenta asignar un stand. Devuelve HTTP 403 Forbidden porque solo Administrador puede asignar stands."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403 Forbidden — Requiere rol Administrador\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.8 PUT /api/stands/99999999/asignar — Intento de asignar stand inexistente (HTTP 404 Not Found)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_artesano\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/stands/99999999/asignar",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "stands",
+                "99999999",
+                "asignar"
+              ]
+            },
+            "description": "Pegá el token de Administrador (2.1). Intenta asignar un stand con ID inexistente. Devuelve HTTP 404 Not Found."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404 Not Found — Stand inexistente\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "06 - Gestión de productos",
+      "item": [
+        {
+          "name": "6.1 POST /api/auth/login — Re-login Artesano A (Actualiza rol a ARTESANO tras aprobación)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos.artesano.belen@ponchodigital.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión nuevamente con Carlos Gómez tras haber sido aprobado en 4.4. Observá que su rol en la respuesta JSON ahora es 'Artesano'. Copiá este nuevo token generado para utilizarlo en la gestión de productos de Artesano A."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Login exitoso de artesano aprobado\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Usuario ahora posee rol ARTESANO\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.usuario.rol.nombre).to.eql('Artesano');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.2 POST /api/auth/login — Re-login Artesano B (Actualiza rol a ARTESANO tras aprobación)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mariana.ceramica.tinogasta@ponchodigital.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión nuevamente con Mariana Carrizo tras haber sido aprobada en 4.5. Su rol ahora es 'Artesano'. Copiá este token para las operaciones de Artesano B y las pruebas de propiedad OWASP."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Login exitoso de artesano aprobado\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Usuario ahora posee rol ARTESANO\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.usuario.rol.nombre).to.eql('Artesano');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.3 GET /api/categorias — Consultar categorías de productos artesanales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/categorias",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "categorias"
+              ]
+            },
+            "description": "Consulta pública de categorías artesanales (Ponchos y Mantas, Alfarería Tradicional, etc.). Observá el id_categoria a usar (ej: 1)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Categorías obtenidas\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.4 POST /api/productos — Artesano A publica Producto A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Poncho de Vicuña Fina Hilado a Mano\",\n  \"descripcion\": \"Pieza tradicional única en telar criollo belicho con terminación artesanal de flecos\",\n  \"precio\": 350000,\n  \"id_categoria\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "description": "Pegá el token de Artesano A copiado en 6.1. Crea el producto textil. Observá el id_producto generado en la respuesta (ej: 1) y anótalo para las operaciones siguientes."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201 Created — Producto creado exitosamente\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"El producto tiene nombre y precio correctos\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.nombre).to.eql('Poncho de Vicuña Fina Hilado a Mano');",
+                  "    pm.expect(Number(jsonData.precio)).to.eql(350000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.5 POST /api/productos — Artesano B publica Producto B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vasija de Barro Cocido y Pulido\",\n  \"descripcion\": \"Vasija ceremonial tradicional tinogasteña inspirada en motivos de la cultura Condorhuasi\",\n  \"precio\": 45000,\n  \"id_categoria\": 2\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "description": "Pegá el token de Artesano B copiado en 6.2. Crea la vasija cerámica. Observá el id_producto generado en la respuesta (ej: 2) y anótalo para las pruebas de seguridad."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201 Created — Producto B creado exitosamente\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"El producto tiene nombre y precio correctos\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.nombre).to.eql('Vasija de Barro Cocido y Pulido');",
+                  "    pm.expect(Number(jsonData.precio)).to.eql(45000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.6 GET /api/productos/mis-productos — Artesano A consulta sus productos propios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/mis-productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "mis-productos"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1). Devuelve exclusivamente los productos publicados por Carlos Gómez."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Listado de productos propios obtenido\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Devuelve array con los productos del artesano autenticado\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(Array.isArray(jsonData.data || jsonData)).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.7 GET /api/productos/1 — Consulta pública del Producto A por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ]
+            },
+            "description": "Reemplazá el 1 en la URL por el id_producto de Producto A devuelto en 6.4 si fuera diferente. Consulta pública de los detalles del producto."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Consulta de producto exitosa\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Verifica datos del producto\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id_producto');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.8 PUT /api/productos/1 — Artesano A modifica precio y descripción de su Producto A",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Poncho de Vicuña Fina Hilado a Mano - Edición Especial\",\n  \"descripcion\": \"Pieza de colección en lana de vicuña fina, hilado a mano en telar criollo\",\n  \"precio\": 380000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1) en la pestaña Authorization (Bearer Token). Reemplazá el ID en la URL por el de Producto A. Actualiza precio y nombre conforme al esquema Zod."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Producto modificado exitosamente\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Precio y nombre actualizados correctamente\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(Number(jsonData.precio)).to.eql(380000);",
+                  "    pm.expect(jsonData.nombre).to.eql(\"Poncho de Vicuña Fina Hilado a Mano - Edición Especial\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.9 DELETE /api/productos/1 — Artesano A elimina su Producto A (HTTP 204 No Content)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1). Reemplazá el ID en la URL por el de Producto A. Elimina su producto con HTTP 204."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204 No Content — Producto eliminado exitosamente\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.10 POST /api/productos — Recrear Producto A para pruebas siguientes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Poncho de Vicuña Fina Hilado a Mano\",\n  \"descripcion\": \"Pieza tradicional única en telar criollo belicho con terminación artesanal de flecos\",\n  \"precio\": 350000,\n  \"id_categoria\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1). Vuelve a crear el Producto A para disponer de él en las pruebas de seguridad de la Carpeta 07. Observá el nuevo id_producto devuelto (ej: 3 o 4)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201 Created — Producto recreado exitosamente\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "07 - Seguridad y propiedad de productos",
+      "item": [
+        {
+          "name": "7.1 PUT /api/productos/2 — Artesano A modifica su propio Producto A (Permitido HTTP 200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio\": 360000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "2"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1) en la pestaña Authorization (Bearer Token). Modificación legítima de su propio Producto A (ID 2). Responde HTTP 200 OK."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Modificación propia permitida\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.2 PUT /api/productos/3 — Artesano B modifica su propio Producto B (Permitido HTTP 200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio\": 48000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "3"
+              ]
+            },
+            "description": "Pegá el token de Artesano B (6.2) en la pestaña Authorization (Bearer Token). Modificación legítima de su propio Producto B (ID 3, vasija ceremonial). Responde HTTP 200 OK."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Modificación propia permitida\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.3 PUT /api/productos/3 — Artesano A intenta modificar Producto B ajeno (Rechazado HTTP 404)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "3"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1) en la pestaña Authorization (Bearer Token). Intenta modificar el Producto B (ID 3) perteneciente a Mariana Carrizo. El servicio filtra por id_producto e id_artesano en la misma consulta, respondiendo HTTP 404 Not Found para mitigar OWASP IDOR sin revelar existencia a terceros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404 Not Found — Bloquea modificación de producto ajeno sin revelar existencia\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.4 PUT /api/productos/2 — Artesano B intenta modificar Producto A ajeno (Rechazado HTTP 404)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "2"
+              ]
+            },
+            "description": "Pegá el token de Artesano B (6.2) en la pestaña Authorization (Bearer Token). Intenta modificar el Producto A (ID 2) perteneciente a Carlos Gómez. Responde HTTP 404 Not Found protegiendo contra IDOR."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404 Not Found — Bloquea modificación de producto ajeno\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.5 DELETE /api/productos/3 — Artesano A intenta eliminar Producto B ajeno (Rechazado HTTP 404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "3"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1) en la pestaña Authorization (Bearer Token). Intenta eliminar el Producto B (ID 3) ajeno. Responde HTTP 404 Not Found y el producto ajeno permanece intacto en la base de datos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404 Not Found — Bloquea borrado de producto ajeno\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.6 DELETE /api/productos/2 — Artesano B intenta eliminar Producto A ajeno (Rechazado HTTP 404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "2"
+              ]
+            },
+            "description": "Pegá el token de Artesano B (6.2) en la pestaña Authorization (Bearer Token). Intenta eliminar el Producto A (ID 2) ajeno. Responde HTTP 404 Not Found y el producto sigue existiendo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404 Not Found — Bloquea borrado de producto ajeno\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7.7 POST /api/productos — Intento de inyectar campo prohibido artesanoId en body (Rechazado HTTP 400 por Zod)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Bufanda Artesanal\",\n  \"descripcion\": \"Tejido en lana de oveja\",\n  \"precio\": 25000,\n  \"id_categoria\": 1,\n  \"artesanoId\": 999\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1). Intenta inyectar 'artesanoId' en el cuerpo. El validador Zod con .strict() lo rechaza de inmediato con HTTP 400 Bad Request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 Bad Request — Zod .strict() rechaza inyección de artesanoId\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "08 - Consultas y filtros",
+      "item": [
+        {
+          "name": "8.1 GET /api/productos — Filtro por rango de precios, ordenamiento y paginación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos?precioMin=30000&precioMax=360000&sortBy=precio&order=asc&page=1&limit=10",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "precioMin",
+                  "value": "30000"
+                },
+                {
+                  "key": "precioMax",
+                  "value": "360000"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "precio"
+                },
+                {
+                  "key": "order",
+                  "value": "asc"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Consulta pública con parámetros query: precioMin=30000, precioMax=360000, orden ascendente y paginación."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Catálogo filtrado por precio obtenido\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estructura contiene array data y metadatos de paginación (meta)\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"data\");",
+                  "    pm.expect(jsonData).to.have.property(\"meta\");",
+                  "    pm.expect(jsonData.meta).to.have.property(\"page\");",
+                  "    pm.expect(jsonData.meta).to.have.property(\"limit\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8.2 GET /api/artesanos — Filtro por rubro artesanal y paginación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/artesanos?id_rubro=1&page=1&limit=10",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "artesanos"
+              ],
+              "query": [
+                {
+                  "key": "id_rubro",
+                  "value": "1"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Consulta pública del catálogo de artesanos filtrado por el rubro Textil (id_rubro=1). Usa artesanoPublicoDTO (sin DNI ni teléfono)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Artesanos filtrados por rubro\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estructura contiene array data y metadatos de paginación (meta)\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"data\");",
+                  "    pm.expect(jsonData).to.have.property(\"meta\");",
+                  "    pm.expect(jsonData.meta).to.have.property(\"page\");",
+                  "    pm.expect(jsonData.meta).to.have.property(\"limit\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8.3 GET /api/localidades — Filtro Georef por provincia (Catamarca) y departamento (Belén)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/localidades?provincia=Catamarca&departamento=Belén&limit=15",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "localidades"
+              ],
+              "query": [
+                {
+                  "key": "provincia",
+                  "value": "Catamarca"
+                },
+                {
+                  "key": "departamento",
+                  "value": "Belén"
+                },
+                {
+                  "key": "limit",
+                  "value": "15"
+                }
+              ]
+            },
+            "description": "Consulta paginada del catálogo Georef filtrando exclusivamente localidades del departamento Belén, Catamarca."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Localidades filtradas obtenidas\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Todas las localidades pertenecen a Catamarca\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    jsonData.data.forEach(item => pm.expect(item.provincia).to.eql('Catamarca'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8.4 GET /api/localidades — Búsqueda predictiva por nombre ('Londres')",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/localidades?nombre=Londres",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "localidades"
+              ],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "Londres"
+                }
+              ]
+            },
+            "description": "Búsqueda por nombre en el catálogo oficial de Georef. Encuentra la localidad histórica de Londres en Catamarca."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Localidad encontrada por nombre\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Devuelve la localidad Londres\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const match = jsonData.data.find(l => l.nombre.toLowerCase().includes('londres'));",
+                  "    pm.expect(match).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8.5 GET /api/stands — Filtro por estado OCUPADO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/stands?estado=OCUPADO",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "stands"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "OCUPADO"
+                }
+              ]
+            },
+            "description": "Consulta pública de stands con filtro por estado OCUPADO."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Stands ocupados obtenidos\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "09 - Casos negativos y errores",
+      "item": [
+        {
+          "name": "9.1 POST /api/productos — Validación Zod: precio negativo (HTTP 400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Producto Erróneo\",\n  \"descripcion\": \"Precio inválido negativo\",\n  \"precio\": -1500,\n  \"id_categoria\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1). Envía precio negativo. Zod valida que precio > 0 y responde HTTP 400 Bad Request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 Bad Request — Rechaza precio negativo\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9.2 POST /api/postulacion — Validación Zod: formato de email inválido (HTTP 400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Test\",\n  \"email\": \"correo_sin_arroba_ni_dominio\",\n  \"password\": \"Password123!\",\n  \"dni\": \"39999888\",\n  \"telefono\": \"3835000000\",\n  \"direccion\": \"Calle 1\",\n  \"descripcion\": \"Prueba email\",\n  \"localidad\": \"Belén\",\n  \"provincia\": \"Catamarca\",\n  \"rubro\": \"Textil\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/postulacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "postulacion"
+              ]
+            },
+            "description": "Envía un email mal formado sin '@' ni dominio. Zod responde HTTP 400 Bad Request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 Bad Request — Rechaza formato de email inválido\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9.3 POST /api/postulacion — Validación Georef: localidad inexistente (HTTP 400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Test\",\n  \"email\": \"pedro.localidad.falsa@ponchodigital.com\",\n  \"password\": \"Password123!\",\n  \"dni\": \"39999777\",\n  \"telefono\": \"3835000000\",\n  \"direccion\": \"Calle 1\",\n  \"descripcion\": \"Prueba localidad falsa\",\n  \"localidad\": \"LocalidadTotalmenteInexistente999\",\n  \"provincia\": \"Catamarca\",\n  \"rubro\": \"Textil\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/postulacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "postulacion"
+              ]
+            },
+            "description": "Envía una localidad que no existe en el catálogo Georef. El servicio responde HTTP 400 Bad Request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 Bad Request — Rechaza localidad inexistente\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9.4 POST /api/postulacion — Validación Georef: provincia que no corresponde a la localidad (HTTP 400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Test\",\n  \"email\": \"pedro.provincia.incoherente@ponchodigital.com\",\n  \"password\": \"Password123!\",\n  \"dni\": \"39999666\",\n  \"telefono\": \"3835000000\",\n  \"direccion\": \"Calle 1\",\n  \"descripcion\": \"Prueba provincia incoherente\",\n  \"localidad\": \"Belén\",\n  \"provincia\": \"Córdoba\",\n  \"rubro\": \"Textil\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/postulacion",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "postulacion"
+              ]
+            },
+            "description": "Envía 'Belén' indicando provincia 'Córdoba'. Aunque Belén existe en Catamarca, no pertenece a Córdoba. Responde HTTP 400 Bad Request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 Bad Request — Rechaza incoherencia localidad/provincia\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9.5 GET /api/productos/99999999 — Consulta de recurso inexistente (HTTP 404 Not Found)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos/99999999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos",
+                "99999999"
+              ]
+            },
+            "description": "Consulta un producto con ID inexistente. El controlador responde HTTP 404 Not Found."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404 Not Found — Recurso inexistente\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9.6 GET /api/productos?limit=999 — Parámetro de paginación fuera de rango (HTTP 400 Bad Request)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/productos?limit=999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "999"
+                }
+              ]
+            },
+            "description": "Envía limit=999 superando el máximo permitido por el schema de paginación (máximo 100). Zod responde HTTP 400 Bad Request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400 Bad Request — Limit fuera de rango\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9.7 GET /api/ruta-totalmente-inexistente — Manejador 404 general de Express (HTTP 404 Not Found)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/ruta-totalmente-inexistente",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "ruta-totalmente-inexistente"
+              ]
+            },
+            "description": "Consulta una ruta que no existe en el enrutador de Express. El middleware 404 centralizado responde HTTP 404 Not Found."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404 Not Found — Ruta no encontrada\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "10 - Logout y revocación de tokens",
+      "item": [
+        {
+          "name": "10.1 POST /api/auth/logout — Cierre de sesión y revocación de token (HTTP 204 No Content)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/logout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Pegá el token de Artesano A (6.1). Cierra la sesión y persiste el jti en la tabla TokenRevocado. Responde HTTP 204 No Content."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204 No Content (o 200) — Sesión cerrada y token revocado\", function () {",
+                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10.2 GET /api/auth/me — Intento de reutilizar token revocado tras logout (HTTP 401 Unauthorized)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Pegá el MISMO token de Artesano A que acaba de ser revocado en 10.1. El middleware verifica contra TokenRevocado y rechaza con HTTP 401 Unauthorized."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401 Unauthorized — Token revocado rechazado\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10.3 POST /api/auth/login — Re-login para emitir nuevo token funcional tras revocación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos.artesano.belen@ponchodigital.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Vuelve a iniciar sesión con Carlos Gómez. Se emite un nuevo JWT con nuevo jti y expiración, demostrando que el usuario puede seguir operando con un token nuevo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 OK — Re-login exitoso tras revocación\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Emite un nuevo token válido\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    }
+  ],
+  "variable": [],
+  "auth": {
+    "type": "noauth"
+  }
+}

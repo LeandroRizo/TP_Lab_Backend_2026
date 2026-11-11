@@ -343,27 +343,236 @@ export const esquemas = {
         }
     },
 
-    ReporteGeneralRespuesta: {
+    // --- Esquemas de respuesta para Catálogos Auxiliares y Operaciones de Feria ---
+    RolRespuesta: {
         type: "object",
-        required: ["fecha_generacion", "resumen", "artesanos_por_localidad", "artesanos_por_rubro", "stands", "productos_por_artesano", "tendencias_busqueda"],
+        required: ["id_rol", "nombre", "created_at", "updated_at"],
         properties: {
-            fecha_generacion: { type: "string", format: "date-time" },
-            resumen: {
-                type: "object",
-                required: ["total_artesanos", "total_productos", "total_stands", "stands_ocupados", "stands_disponibles"],
-                properties: {
-                    total_artesanos: { type: "integer" },
-                    total_productos: { type: "integer" },
-                    total_stands: { type: "integer" },
-                    stands_ocupados: { type: "integer" },
-                    stands_disponibles: { type: "integer" }
-                }
+            id_rol: { type: "integer", example: 1 },
+            nombre: { type: "string", example: "Administrador" },
+            descripcion: { type: "string", nullable: true, example: "Administrador general de la plataforma Poncho Digital" },
+            created_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.882Z" },
+            updated_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.882Z" }
+        }
+    },
+
+    ListaRolesRespuesta: {
+        type: "object",
+        required: ["data", "meta"],
+        properties: {
+            data: {
+                type: "array",
+                items: { $ref: "#/components/schemas/RolRespuesta" }
             },
-            artesanos_por_localidad: { type: "array", items: { type: "object" } },
-            artesanos_por_rubro: { type: "array", items: { type: "object" } },
-            stands: { type: "object" },
-            productos_por_artesano: { type: "array", items: { type: "object" } },
-            tendencias_busqueda: { type: "object" }
+            meta: { $ref: "#/components/schemas/MetaPaginacion" }
+        }
+    },
+
+    CategoriaRespuesta: {
+        type: "object",
+        required: ["id_categoria", "nombre", "created_at", "updated_at"],
+        properties: {
+            id_categoria: { type: "integer", example: 1 },
+            nombre: { type: "string", example: "Ponchos y Mantas" },
+            descripcion: { type: "string", nullable: true, example: "Prendas mayores tejidas en telar criollo" },
+            created_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.892Z" },
+            updated_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.892Z" }
+        }
+    },
+
+    ListaCategoriasRespuesta: {
+        type: "object",
+        required: ["data", "meta"],
+        properties: {
+            data: {
+                type: "array",
+                items: { $ref: "#/components/schemas/CategoriaRespuesta" }
+            },
+            meta: { $ref: "#/components/schemas/MetaPaginacion" }
+        }
+    },
+
+    LocalidadRespuesta: {
+        type: "object",
+        required: ["id_localidad", "nombre", "created_at", "updated_at"],
+        properties: {
+            id_localidad: { type: "integer", example: 1 },
+            id_georef: { type: "string", nullable: true, example: "10007010" },
+            nombre: { type: "string", example: "San Fernando del Valle de Catamarca" },
+            departamento: { type: "string", nullable: true, example: "Capital" },
+            provincia: { type: "string", nullable: true, example: "Catamarca" },
+            latitud: { type: "number", nullable: true, example: -28.46957 },
+            longitud: { type: "number", nullable: true, example: -65.78524 },
+            created_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:59.597Z" },
+            updated_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:59.597Z" }
+        }
+    },
+
+    ListaLocalidadesRespuesta: {
+        type: "object",
+        required: ["data", "meta"],
+        properties: {
+            data: {
+                type: "array",
+                items: { $ref: "#/components/schemas/LocalidadRespuesta" }
+            },
+            meta: { $ref: "#/components/schemas/MetaPaginacion" }
+        }
+    },
+
+    RubroRespuesta: {
+        type: "object",
+        required: ["id_rubro", "nombre", "created_at", "updated_at"],
+        properties: {
+            id_rubro: { type: "integer", example: 1 },
+            nombre: { type: "string", example: "Textil" },
+            descripcion: { type: "string", nullable: true, example: "Tejidos tradicionales en fibra de vicuña, llama y oveja" },
+            created_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.885Z" },
+            updated_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.885Z" }
+        }
+    },
+
+    ListaRubrosRespuesta: {
+        type: "object",
+        required: ["data", "meta"],
+        properties: {
+            data: {
+                type: "array",
+                items: { $ref: "#/components/schemas/RubroRespuesta" }
+            },
+            meta: { $ref: "#/components/schemas/MetaPaginacion" }
+        }
+    },
+
+    PabellonRespuesta: {
+        type: "object",
+        required: ["id_pabellon", "numero", "nombre", "created_at", "updated_at"],
+        properties: {
+            id_pabellon: { type: "integer", example: 1 },
+            numero: { type: "integer", example: 1 },
+            nombre: { type: "string", example: "Pabellón Peregrina Zárate" },
+            descripcion: { type: "string", nullable: true, example: "Pabellón central de artesanos textiles y tradicionales" },
+            created_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.896Z" },
+            updated_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.896Z" }
+        }
+    },
+
+    ListaPabellonesRespuesta: {
+        type: "object",
+        required: ["data", "meta"],
+        properties: {
+            data: {
+                type: "array",
+                items: { $ref: "#/components/schemas/PabellonRespuesta" }
+            },
+            meta: { $ref: "#/components/schemas/MetaPaginacion" }
+        }
+    },
+
+    ZonaRespuesta: {
+        type: "object",
+        required: ["id_zona", "id_pabellon", "numero", "nombre", "created_at", "updated_at"],
+        properties: {
+            id_zona: { type: "integer", example: 1 },
+            id_pabellon: { type: "integer", example: 1 },
+            numero: { type: "integer", example: 1 },
+            nombre: { type: "string", example: "Sector Norte - Textil" },
+            descripcion: { type: "string", nullable: true, example: "Sector destinado a tejedores tradicionales" },
+            created_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.899Z" },
+            updated_at: { type: "string", format: "date-time", example: "2026-11-08T23:05:23.899Z" }
+        }
+    },
+
+    ListaZonasRespuesta: {
+        type: "object",
+        required: ["data", "meta"],
+        properties: {
+            data: {
+                type: "array",
+                items: { $ref: "#/components/schemas/ZonaRespuesta" }
+            },
+            meta: { $ref: "#/components/schemas/MetaPaginacion" }
+        }
+    },
+
+    InscripcionRespuesta: {
+        type: "object",
+        required: [
+            "id_inscripcion",
+            "id_artesano",
+            "anio",
+            "fecha_solicitud",
+            "estado",
+            "created_at",
+            "updated_at"
+        ],
+        properties: {
+            id_inscripcion: { type: "integer", example: 1 },
+            id_artesano: { type: "integer", example: 1 },
+            id_stand: { type: "integer", nullable: true, example: 1 },
+            anio: { type: "integer", example: 2026 },
+            fecha_solicitud: { type: "string", format: "date-time", example: "2026-11-09T00:37:30.109Z" },
+            fecha_resolucion: { type: "string", format: "date-time", nullable: true, example: "2026-11-09T00:37:30.109Z" },
+            estado: { type: "string", enum: ["PENDIENTE", "APROBADA", "RECHAZADA"], example: "APROBADA" },
+            motivo_rechazo: { type: "string", nullable: true },
+            observaciones: { type: "string", nullable: true, example: "Asignación directa por administrador" },
+            created_at: { type: "string", format: "date-time", example: "2026-11-09T00:37:30.112Z" },
+            updated_at: { type: "string", format: "date-time", example: "2026-11-09T00:37:30.112Z" }
+        }
+    },
+
+    ListaInscripcionesRespuesta: {
+        type: "object",
+        required: ["data", "meta"],
+        properties: {
+            data: {
+                type: "array",
+                items: { $ref: "#/components/schemas/InscripcionRespuesta" }
+            },
+            meta: { $ref: "#/components/schemas/MetaPaginacion" }
+        }
+    },
+
+    AsignarStandRespuesta: {
+        type: "object",
+        required: [
+            "id_inscripcion",
+            "id_artesano",
+            "id_stand",
+            "anio",
+            "fecha_solicitud",
+            "estado",
+            "created_at",
+            "updated_at",
+            "stand",
+            "artesano"
+        ],
+        properties: {
+            id_inscripcion: { type: "integer", example: 1 },
+            id_artesano: { type: "integer", example: 1 },
+            id_stand: { type: "integer", example: 1 },
+            anio: { type: "integer", example: 2026 },
+            fecha_solicitud: { type: "string", format: "date-time", example: "2026-11-09T00:37:30.109Z" },
+            fecha_resolucion: { type: "string", format: "date-time", nullable: true, example: "2026-11-09T00:37:30.109Z" },
+            estado: { type: "string", enum: ["APROBADA", "RECHAZADA", "PENDIENTE"], example: "APROBADA" },
+            motivo_rechazo: { type: "string", nullable: true },
+            observaciones: { type: "string", nullable: true, example: "Asignación directa por administrador" },
+            created_at: { type: "string", format: "date-time", example: "2026-11-09T00:37:30.112Z" },
+            updated_at: { type: "string", format: "date-time", example: "2026-11-09T00:37:30.112Z" },
+            stand: { $ref: "#/components/schemas/StandRespuesta" },
+            artesano: { $ref: "#/components/schemas/ArtesanoRespuesta" }
+        }
+    },
+
+    ListaUsuariosRespuesta: {
+        type: "object",
+        required: ["data", "meta"],
+        properties: {
+            data: {
+                type: "array",
+                items: { $ref: "#/components/schemas/UsuarioPublico" }
+            },
+            meta: { $ref: "#/components/schemas/MetaPaginacion" }
         }
     }
 };

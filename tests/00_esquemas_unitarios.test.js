@@ -5,6 +5,7 @@ import { productoSchema, productoActualizarSchema } from "../src/schemas/product
 import { registroSchema, loginSchema, postulacionSchema } from "../src/schemas/auth.schema.js";
 import { resolverSolicitudSchema } from "../src/schemas/solicitud.schema.js";
 import { estadoCuentaSchema } from "../src/schemas/cuenta.schema.js";
+import { inscripcionSchema } from "../src/schemas/inscripcion.schema.js";
 import { esquemas } from "../src/documentacion/esquemas.js";
 
 describe("00. Pruebas Unitarias de Esquemas Zod (safeParse) y Contrato OpenAPI", () => {
@@ -201,5 +202,38 @@ describe("00. Pruebas Unitarias de Esquemas Zod (safeParse) y Contrato OpenAPI",
         // UsuarioEntrada: recibe password (no passwordHash)
         assert.ok(esquemas.UsuarioEntrada.properties.password);
         assert.equal(esquemas.UsuarioEntrada.properties.passwordHash, undefined);
+    });
+
+    it("Validación de inscripcionSchema con safeParse: z.coerce.date(), rechazo de fecha inválida y .strict()", () => {
+        // 1. Aceptación de fecha válida y conversión a instancia Date mediante z.coerce.date()
+        const resultadoValido = inscripcionSchema.safeParse({
+            id_artesano: 1,
+            id_stand: 2,
+            anio: 2026,
+            fecha_solicitud: "2026-07-15T10:00:00.000Z",
+            estado: "CONFIRMADA"
+        });
+        assert.equal(resultadoValido.success, true);
+        assert.ok(resultadoValido.data.fecha_solicitud instanceof Date);
+        assert.equal(resultadoValido.data.fecha_solicitud.toISOString(), "2026-07-15T10:00:00.000Z");
+
+        // 2. Rechazo de una fecha inválida
+        const resultadoFechaInvalida = inscripcionSchema.safeParse({
+            id_artesano: 1,
+            anio: 2026,
+            fecha_solicitud: "fecha-no-valida-xyz",
+            estado: "CONFIRMADA"
+        });
+        assert.equal(resultadoFechaInvalida.success, false);
+
+        // 3. Rechazo de propiedades adicionales por .strict()
+        const resultadoCampoExtra = inscripcionSchema.safeParse({
+            id_artesano: 1,
+            anio: 2026,
+            fecha_solicitud: "2026-07-15T10:00:00.000Z",
+            estado: "CONFIRMADA",
+            propiedadNoPermitida: "intruso"
+        });
+        assert.equal(resultadoCampoExtra.success, false);
     });
 });

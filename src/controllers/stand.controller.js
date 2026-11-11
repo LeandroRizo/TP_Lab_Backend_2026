@@ -1,4 +1,3 @@
-import { standQueryDTO } from "../dtos/standQuery.dto.js";
 import {
     getStands,
     crearStand,
@@ -89,8 +88,7 @@ export const obtenerStands = async (req, res, next) => {
         }
     */
     try {
-        const filtros = standQueryDTO(req.queryValidada);
-        const data = await getStands(filtros);
+        const data = await getStands(req.queryValidada);
         res.status(200).json(data);
     } catch (error) {
         next(error);
@@ -265,6 +263,12 @@ export const asignarArtesano = async (req, res, next) => {
         #swagger.tags = ['Stands']
         #swagger.summary = 'Asignar un artesano a un stand del predio (Solo Administrador)'
         #swagger.security = [{ "bearerAuth": [] }]
+        #swagger.parameters['id'] = {
+            in: 'path',
+            description: 'ID numérico del stand',
+            required: true,
+            '@schema': { type: 'integer', minimum: 1 }
+        }
         #swagger.requestBody = {
             required: true,
             content: {

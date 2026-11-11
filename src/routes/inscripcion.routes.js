@@ -8,17 +8,19 @@ import {
 } from "../controllers/inscripcion.controller.js";
 import { asignarArtesano } from "../controllers/stand.controller.js";
 
-import { validarInscripcion } from "../middlewares/validarInscripcion.js";
-import { validarInscripcionQuery } from "../middlewares/validarInscripcionQuery.js";
-import { validarAsignarStand } from "../middlewares/validarSolicitud.js";
+import { validarBody, validarQuery, validarParams } from "../middlewares/validar.middleware.js";
+import { inscripcionSchema } from "../schemas/inscripcion.schema.js";
+import { inscripcionQuerySchema } from "../schemas/inscripcionQuery.schema.js";
+import { idParamSchema } from "../schemas/param.schema.js";
+import { asignarStandSchema } from "../schemas/solicitud.schema.js";
 import { autenticar } from "../middlewares/auth.middleware.js";
 import { contextoUsuario } from "../middlewares/contextoUsuario.js";
 import { autorizarRoles } from "../middlewares/autorizarRoles.js";
 
 const router = express.Router();
 
-router.get("/", validarInscripcionQuery, obtenerInscripcions);
-router.get("/:id", obtenerPorId);
+router.get("/", validarQuery(inscripcionQuerySchema), obtenerInscripcions);
+router.get("/:id", validarParams(idParamSchema), obtenerPorId);
 
 // Criterio 4: Solo ADMINISTRADOR
 router.post(
@@ -26,7 +28,7 @@ router.post(
     autenticar,
     contextoUsuario,
     autorizarRoles("ADMINISTRADOR"),
-    validarAsignarStand,
+    validarBody(asignarStandSchema, "Los datos para la asignación de stand no son válidos"),
     asignarArtesano
 );
 
@@ -35,7 +37,7 @@ router.post(
     autenticar,
     contextoUsuario,
     autorizarRoles("ADMINISTRADOR"),
-    validarInscripcion,
+    validarBody(inscripcionSchema, "Los datos de inscripcion no son válidos"),
     crear
 );
 
@@ -44,7 +46,8 @@ router.put(
     autenticar,
     contextoUsuario,
     autorizarRoles("ADMINISTRADOR"),
-    validarInscripcion,
+    validarParams(idParamSchema),
+    validarBody(inscripcionSchema, "Los datos de inscripcion no son válidos"),
     actualizar
 );
 
@@ -53,6 +56,7 @@ router.delete(
     autenticar,
     contextoUsuario,
     autorizarRoles("ADMINISTRADOR"),
+    validarParams(idParamSchema),
     eliminar
 );
 

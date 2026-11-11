@@ -64,13 +64,21 @@ model Artesano {
 }
 
 model Localidad {
-  id_localidad Int       @id @default(autoincrement())
+  id_localidad Int        @id @default(autoincrement())
+  id_georef    String?    @unique
   nombre       String
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  departamento String?
+  provincia    String?
+  latitud      Float?
+  longitud     Float?
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
 
   artesanos    Artesano[]
 
+  @@index([provincia])
+  @@index([departamento])
+  @@index([nombre])
 }
 
 model Rubro {
