@@ -14,6 +14,8 @@ import { autenticar } from "../middlewares/auth.middleware.js";
 import { contextoUsuario } from "../middlewares/contextoUsuario.js";
 import { autorizarRoles } from "../middlewares/autorizarRoles.js";
 
+import { validarArtesano } from "../middlewares/validarArtesano.js";
+
 const router = express.Router();
 
 router.get("/", validarQuery(artesanoQuerySchema), obtenerArtesanos);
